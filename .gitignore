@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.skilltree_cache/
+*.pack
+*.bak*
+
+# Creative Assembly-derived art and game files are never published. They ship in the .pack only.
+*.png
+*.dds
+*.jpg
+*.jpeg
+*.webp
+*.tga
+*.bin
+*.loc
+*.twui.xml
+*.xlsx
