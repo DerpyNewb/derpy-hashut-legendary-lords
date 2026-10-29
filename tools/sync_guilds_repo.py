@@ -45,13 +45,13 @@ MANIFEST = [(p, p) for p in [
     "tools/sync_derpy_hub.py",
     # Each race's own panel and card (gen_guilds_ui.FRAMES) - text, naming CA art by path.
     *[_UI + "derpy_gg_%s_%s.twui.xml" % (kind, race)
-      for race in ("brt", "cth", "def", "dwf", "emp", "hef", "ksl", "skv")
+      for race in ("brt", "chs", "cth", "def", "dwf", "emp", "hef", "ksl", "skv")
       for kind in ("panel", "card")],
     # The same files at MCT's Small and Large panel sizes (gen_guilds_ui.SIZES). Their resized
     # CA art (derpy_gg_sized, ui/skins/*/derpy_gg_*) is art, so it stays out with the rest.
     *[_UI + "derpy_gg_%s%s_%s.twui.xml" % (kind, race, sfx)
       for sfx in ("sm", "lg")
-      for race in ("", "_brt", "_cth", "_def", "_dwf", "_emp", "_hef", "_ksl", "_skv")
+      for race in ("", "_brt", "_chs", "_cth", "_def", "_dwf", "_emp", "_hef", "_ksl", "_skv")
       for kind in ("panel", "card")],
     *[_UI + "derpy_gg_%s_%s.twui.xml" % (kind, sfx)
       for sfx in ("sm", "lg") for kind in ("row", "list", "frow")],
@@ -186,6 +186,14 @@ MANIFEST = [(p, p) for p in [
      "docs/design/2026-10-09-great-guilds-temple-lore-design.md"),
     ("docs/superpowers/plans/2026-10-09-great-guilds-temple-lore.md",
      "docs/plans/2026-10-09-great-guilds-temple-lore.md"),
+    ("docs/sessions/HANDOFF_20261011_GUILDS_RECRUITING.md",
+     "docs/history/HANDOFF_20261011_GUILDS_RECRUITING.md"),
+    ("docs/superpowers/specs/2026-10-12-great-guilds-warriors-of-chaos-design.md",
+     "docs/design/2026-10-12-great-guilds-warriors-of-chaos-design.md"),
+    ("docs/superpowers/plans/2026-10-12-great-guilds-warriors-of-chaos.md",
+     "docs/plans/2026-10-12-great-guilds-warriors-of-chaos.md"),
+    ("docs/sessions/HANDOFF_20261012_GUILDS_WARRIORS_OF_CHAOS.md",
+     "docs/history/HANDOFF_20261012_GUILDS_WARRIORS_OF_CHAOS.md"),
     ("anti-slop/audit-001-2026-10-09.md", "docs/history/ANTISLOP_AUDIT_001_20261009.md"),
     ("anti-slop/audit-001-fixlog.md", "docs/history/ANTISLOP_AUDIT_001_FIXLOG.md"),
 ]

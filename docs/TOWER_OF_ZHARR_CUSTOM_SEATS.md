@@ -891,7 +891,10 @@ by eight different factions, with zero script errors in 4.2 MB of log. Full writ
   spawned a duplicate lord on most claims (57 spawns vs 26 suppressions in 470 logs — it only
   ever worked on a re-open, never on the claim itself). Fixed by parking the grant in a
   `pending_grants` table, drained on `FactionJoinsConfederation`, with a `FactionTurnStart`
-  backstop. See `HANDOFF_20260830_TOZ_TIER4_SEATS.md` §7.
+  backstop. See `HANDOFF_20260830_TOZ_TIER4_SEATS.md` §7. Since 2026-10-10 the annex is a
+  payload, not `force_confederation` (a no-op for Chaos Dwarfs after the 10-09 patch), and
+  `FactionJoinsConfederation` fires synchronously inside `apply_payload`, so the grant is parked
+  before the call (§4).
 - **`RitualCompletedEvent.succeeded` is not checked.** See §9.2. An unsuccessful completion
   would annex the house anyway. One `pcall`ed field read to close.
 - ~~**Old World / Darklands untested.**~~ **Resolved 2026-08-20.** Launched from

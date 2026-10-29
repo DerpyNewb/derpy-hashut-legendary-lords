@@ -152,6 +152,82 @@ Verified by diffing a working vanilla seat against the mod's. Miss any and it fa
 present-but-permanently-disabled and no script call overrides it. See
 `TOWER_OF_ZHARR_CUSTOM_SEATS.md` §2.
 
+### What a cap card draws, and what the payload credits (2026-10-22)
+
+Read from `hellforge_panel_unit_caps_tab.twui.xml` (`ui3.pack`). For each ritual the card finds the
+ritual's effect in `wh3_dlc23_bundle_chd_unit_cap_rituals` (effect key == ritual key), takes
+**`.UnitListsList.FirstContext`** (the first list that effect raises), draws its units through
+`Helforge.DisplayUnitsForRitualCategory(category, list)` (in neither CCO doc CA ships; what it filters
+is unmeasured), and prints `PlayersFaction.UnitCapForUnit` of that list's first unit. So **keep one
+list per cap effect**: a second list on the same effect is raised but never drawn. The ritual list is
+sorted by that first unit's cost.
+
+The payload's `_increase_<x>_1` transaction is the category's level (§9). Pointing it at a CA
+category is a choice: `derpy_chd_house_units` (`tools/gen_chd_house_units.py`) gives each house one
+list and one ritual (one card, its units sharing the cap) in a new `HELLFORGE_CAPS_HOUSES` tab, and
+pays the house's lead unit's vanilla partner's counter, so a Bzaark cap counts as a melee infantry
+purchase. Its rituals clone the partner's `effect_bonus_value_ritual_junctions` too, so CA's
+category discounts reach them. One thing a clone cannot copy is the +10 war-machine step (§1): a
+modded war-machine cap steps +25.
+
+A card draws its list's units through `Helforge.DisplayUnitsForRitualCategory`, which is in
+`ui/cco/dlc23helforge.cco` (`ui.pack`, compressed): for `HELLFORGE_CAPS_WARMACHINES` it keeps only
+the hardcoded `WarmachineUnits` (seven CA keys); every other category draws the whole list. Measured
+live 2026-10-25: CA's War Machines card drew 5 of its list's 7 units (the two `_1dreadquake`
+variants are not in `WarmachineUnits`).
+
+### The Armoury list holds seven categories
+
+`list_box` in `hellforge_panel_unit_caps_tab.twui.xml` is `LayoutEngine type="List"
+itemsperrow="4"`, and `list_clip` shows two rows of 374 px. **CA's help text (`hint_text`, 520 px)
+is the list's last item**, so the clip holds seven categories. CA ships six; one modded category
+fits, and the next one pushes the help text into a third row below the clip. Measured live
+2026-10-25 with nine (CA's six, Zharrgron, Gyrocopters, Houses): Houses sat at y 877, the clip
+ended at 864, and nothing on screen said a category was missing.
+
+No CA file needs overriding. `CcoComponent.ListLayoutContext.SetItemsPerRow(n)` is in CA's CCO doc,
+and from Lua:
+
+```lua
+common.call_context_command("CcoCampaignRoot", "",
+    'Component("B1369CAB-5640-421F-B5A2CA03B6478079").ListLayoutContext.SetItemsPerRow(5)')
+```
+
+(the GUID is `list_box`'s). On `PanelOpenedCampaign` for `hellforge_panel_main` the list already
+exists, the value survives a switch to the Manufactory and back, and `hslider` rescales to the wider
+list on its own. Use `ceil((categories + 1) / 2)` to keep everything in two rows.
+`derpy_chd_house_units_hellforge.lua` does this. In the same handler it hides the Houses block's
+`group_title > unlock_bar_holder`, the level ladder, because a category with no Manufactory track
+can only show padlocks there. Two rows is the author's ruling, not just CA's default: do not add a
+third.
+
+### The Manufactory's unit cards: one row, wrapped to two
+
+Each Manufactory box draws its unit cards in `card_holder`
+(`hellforge_panel_category_tab.twui.xml`), `LayoutEngine type="HorizontalList"`: one row of 35x76
+cards, and past about ten it runs out of the 510 px box into the next one. With several unit mods
+loaded, Melee Infantry had 21 and Missile Infantry 17 (2026-10-25). On a horizontal list
+`ListLayoutContext.SetItemsPerRow(n)` is **items per column**, so 2 gives two rows. Reach one box's
+holder by name, from the category list's GUID:
+
+```lua
+'Component("6E24E192-CB18-4BC2-88C00EF016E8F2EA").ChildContext("<box id>").ChildContext("card_holder").ListLayoutContext'
+```
+
+The box has room for one row only: the cards end 10 px above `category_upkeep` (the upkeep line,
+shown once the category has upgrades running), and the upgrade list (`entries_holder`) runs to 30 px
+above the furnace art. So the second row needs `category_upkeep` and `entries_holder` moved down by
+a card's height less that gap (70 px at 100% scale), and `entries_holder` and its
+`trait_list > list_clip` shortened by the same. The list holds three slots (285 px), so 380 px is
+still room to spare. `trait_list` itself ignores `Resize`. `derpy_chd_house_units_hellforge.lua`
+does all of this to every box, two rows and never more (author's ruling). It works the shift out
+from the box's own card height so UI scale does not break it, and uses `ItemsPerRow == 2` as the
+"done" mark. The boxes exist on `PanelOpenedCampaign` and survive an Armaments change; a 250 ms
+real-time check while the panel is open catches any rebuilt one.
+
+Two traps met on the way, both in memory: `string.find` with `^` or `$` finds nothing in game (use
+`match`), and the wh3 bridge drops the list half of a Lua table that also has named keys.
+
 ---
 
 ## 4. The Tower of Zharr free-cap seats, and why modded rituals can never win them
@@ -374,9 +450,18 @@ Built 2026-08-21. §1–§8 are the **unit caps** tab. The **upgrades** tab is a
 with its own eleven tables, and it is fully data-driven: `hellforge_panel_category_tab.twui.xml`
 line 1146 fills the category boxes from `Helforge.UnitCategoriesList`, so a category appears as
 soon as the player's faction has an `initiative_set` in it. Nothing is hardcoded to CA's six.
-One 9.0 exception to check: the panel lists war machines from a hardcoded `WarmachineUnits`
-list in `ui/cco/dlc23helforge.cco:156`, and whether a modded war machine needs adding to it is
-open (`sessions/HANDOFF_20260925_UPDATE_9_0_NEW_CAPABILITY.md` §2).
+One 9.0 exception, **display only** (read 2026-10-25): `DisplayUnitsForInitiativeSet` in
+`ui/cco/dlc23helforge.cco` draws the War Machines box's unit cards from the hardcoded
+`WarmachineUnits` (seven CA keys), and every other box's from its units minus RoRs
+(`IsRenown == false`). The upgrades still apply to a modded war machine or an RoR in the category's
+unit set, because `effect_bonus_value_ids_unit_sets` binds by set, but its card is not drawn. All 12
+`derpy_chd_house_units` units are in their sets, so all 12 are upgraded. To picture its war machines
+(Goliath, Tenderizer, Whirlwind Slicer; author's call 2026-10-25) that pack ships the `.cco` with
+them appended to `WarmachineUnits`, rebuilt from CA's current file by `gen_chd_house_units.py`
+(`cco_override`), which fails if the list moves. **Re-run it after any patch that touches
+`dlc23helforge.cco`.** No other installed pack (372 scanned) overrides that file; mods do override
+CA `.cco` files by path (IEE's `campaignselect.cco`, Mixer's `dlc25bookofgrudges.cco`). The four
+RoRs stay unpictured, as CA's own are.
 
 ### The table set for one category
 

@@ -67,6 +67,13 @@ ICONS = {
     "wyvern_scales": "a few large overlapping dark green wyvern scales with a purple sheen, tied with a leather strap",
 }
 
+ICONS.update({
+    "hardtack": "three square dry beige ship biscuits, one leaning against the stack",
+    "leather": "two folded russet cured hides tied together",
+    "cloth": "two folded bolts of cream and muted blue plain cloth",
+    "tools": "crossed blacksmith hammer and short iron pincers",
+})
+
 PROMPT = """Use the built-in image_gen tool (not the CLI fallback). Do not run shell commands
 and do not copy files.
 

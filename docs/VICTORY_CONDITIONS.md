@@ -767,7 +767,8 @@ for all eleven houses — the DB columns are decoration, the loc is what the run
 
 - **One file in `script/campaign/mod/`, which loads in every campaign** — rather than VCO's
   `require` path keyed on `cm:get_campaign_name()`, which §10 shows is neither the campaign key
-  nor derivable. With twelve factions the whole per-campaign dimension is not worth its risk.
+  nor derivable. With twelve factions (thirteen since the Uzkul Mingol, 2026-10-11) the whole
+  per-campaign dimension is not worth its risk.
   This is also why the routes are **map-agnostic**: one file, four maps, two region namespaces.
   The exceptions are the map-gated routes below.
 - **One mission slot row per route index** (`derpy_route_victory_1` .. `_5`), not one shared
