@@ -26,7 +26,6 @@ listener calls cm:spawn_character_to_pool.
     py tools/gen_zochaz.py --import      # ... and import into the Modpacks pack, then verify
     py tools/gen_zochaz.py --selftest
 """
-import json
 import os
 import re
 import shutil
@@ -479,42 +478,37 @@ def write(out):
 
 
 def do_import(plan, loose, frag=FRAG):
-    from import_house_ancillaries import call, check_keys
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
+    # frag is unused since RPFM v2 (create_file takes the file name from the path); kept for
+    # gen_new_lords_cb.py, which passes it.
+    from import_house_ancillaries import check_keys
+    from rpfm_client import call, db, ensure_game, exists, open_pack
+    ensure_game()
     keyed = []
     for path, rel, _n in plan:
         if path.startswith("db/"):
             with open(rel, encoding="utf-8") as fh:
                 fh.readline()
                 ver = int(fh.readline().split("\t")[0].split(";")[1])
-            new = {"DB": [frag, path.split("/")[1], ver]}
+            new = db(path.split("/")[1], ver)
         else:
-            new = {"Loc": frag}
+            new = {"type": "loc"}
         keyed.append((path, new, os.path.basename(rel), os.path.dirname(rel)))
     check_keys(keyed)
-    try:
-        call("close_pack", {"pack_key": PACK})
-    except Exception:
-        pass
-    call("open_packfiles", {"paths": [PACK]})
+    key = open_pack(PACK)
     for path, new, tsv, folder in keyed:      # import_tsv only fills a file that already exists
-        try:
-            call("new_packed_file", {"pack_key": PACK, "path": path, "new_file": json.dumps(new)})
-        except RuntimeError:
-            pass                              # already there from an earlier run
-        call("import_tsv", {"pack_key": PACK, "table_path": path,
-                            "tsv_path": os.path.join(folder, tsv)})
+        if not exists(key, path):             # else already there from an earlier run
+            call("create_file", {"pack": key, "path": path, "kind": new})
+        call("import_tsv", {"pack": key, "path": path, "tsv_path": os.path.join(folder, tsv)})
     for src, dest in loose:
-        call("add_packed_files", {"pack_key": PACK, "source_paths": [src],
-                                  "destination_paths": json.dumps([{"File": dest}])})
-    call("save_packfile", {"pack_key": PACK})
-    call("close_pack", {"pack_key": PACK})
+        call("add_files_from_disk", {"pack": key, "paths": [src], "pack_paths": [dest]})
+    call("save_pack", {"pack": key})
+    call("close_pack", {"pack": key})
     print("saved")
     dest = tempfile.mkdtemp()
-    call("open_packfiles", {"paths": [PACK]})
-    call("extract_packed_files", {"pack_key": PACK, "export_as_tsv": True, "destination_path": dest,
-         "source_paths": json.dumps({"PackFile": [{"File": p} for p, _r, _n in plan]})})
-    call("close_pack", {"pack_key": PACK})
+    key = open_pack(PACK)
+    call("extract_files", {"source": {"pack": key}, "paths": [p for p, _r, _n in plan],
+                           "destination": dest, "as_tsv": True})
+    call("close_pack", {"pack": key})
     bad = 0
     for path, rel, n in plan:
         got = open(os.path.join(dest, *path.split("/")) + ".tsv", encoding="utf-8").read().split("\n")[2:]

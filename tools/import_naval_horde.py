@@ -10,16 +10,16 @@ The TSVs are the exported ones, rewritten in place by tools/gen_naval_horde_tord
 import_tsv's replace-the-whole-file behaviour is safe: every row that was in the pack is
 still in the file.
 
-Never trust import_tsv's "Success" - verify by re-opening the saved pack in a FRESH session
-and decoding it. Each py invocation is its own MCP session.
+Never trust import_tsv's row count - verify by re-opening the saved pack from disk in a
+separate run and decoding it.
 """
 import glob
-import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from import_house_ancillaries import call, check_keys      # noqa: E402
+from import_house_ancillaries import check_keys            # noqa: E402
+from rpfm_client import call, db, ensure_game, exists, open_pack   # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXP = os.path.join(ROOT, "Modding Files", "source", "naval_horde", "export")
@@ -37,7 +37,7 @@ SCRIPTS = ["derpy_chd_naval_admiral.lua", "derpy_chd_vc_unit_lock.lua",
 
 
 def plan():
-    """[(container_path, new_file_spec, tsv_basename, dir)] read from each TSV's meta line.
+    """[(container_path, create_file_kind, tsv_basename, dir)] read from each TSV's meta line.
 
     The meta line is RPFM's own `#<table>;<version>;<path>` - taking the version and the
     destination path from there rather than a hardcoded list means a schema bump cannot
@@ -52,10 +52,7 @@ def plan():
             meta = fh.readline().rstrip("\n").split("\t")[0]
         assert meta.startswith("#"), "%s has no RPFM meta line: %r" % (fn, meta)
         table, ver, path = meta[1:].split(";")
-        if table == "Loc":
-            spec = {"Loc": path.rsplit("/", 1)[-1].replace(".loc", "")}
-        else:
-            spec = {"DB": [path.rsplit("/", 1)[-1], table, int(ver)]}
+        spec = {"type": "loc"} if table == "Loc" else db(table, int(ver))
         out.append((path, spec, fn, EXP))
     return out
 
@@ -69,32 +66,31 @@ def main():
         lua_root = sys.argv[sys.argv.index("--lua") + 1]
 
     entries = plan()
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
+    ensure_game()
     check_keys(entries)
 
-    pack = call("open_packfiles", {"paths": [pack_path]})["StringContainerInfo"][0]
+    pack = open_pack(pack_path)
     for path, spec, fn, d in entries:
         rows = sum(1 for _ in open(os.path.join(d, fn), encoding="utf-8")) - 2
+        there = exists(pack, path)
         if rows <= 0:
             # A generator that stops owning a table writes its TSV empty. Importing that
-            # leaves a zero-row fragment in the pack forever; delete it instead. RPFM
-            # answers happily when the path is not there, so this is safe to re-run.
-            call("delete_packed_files", {"pack_key": pack,
-                                         "paths": json.dumps([{"File": path}])})
+            # leaves a zero-row fragment in the pack forever; delete it instead. Only when
+            # it is there, so this is safe to re-run.
+            if there:
+                call("delete_files", {"pack": pack, "paths": [path]})
             print("  %5s  %s" % ("del", path))
             continue
-        call("new_packed_file", {"pack_key": pack, "path": path,
-                                 "new_file": json.dumps(spec)})
-        call("import_tsv", {"pack_key": pack, "table_path": path,
-                            "tsv_path": os.path.join(d, fn)})
+        if not there:                    # import_tsv replaces a table; it cannot make one
+            call("create_file", {"pack": pack, "path": path, "kind": spec})
+        call("import_tsv", {"pack": pack, "path": path, "tsv_path": os.path.join(d, fn)})
         print("  %5d  %s" % (rows, path))
 
     for name in SCRIPTS:
         for src in sorted(glob.glob(os.path.join(PACK, "script", "campaign", "*", "mod",
                                                  name))):
             rel = os.path.relpath(src, PACK).replace(os.sep, "/")
-            call("add_packed_files", {"pack_key": pack, "source_paths": [src],
-                                      "destination_paths": json.dumps([{"File": rel}])})
+            call("add_files_from_disk", {"pack": pack, "paths": [src], "pack_paths": [rel]})
             print("  %5dB  %s" % (os.path.getsize(src), rel))
 
     if lua_root:
@@ -102,11 +98,10 @@ def main():
             for f in files:
                 src = os.path.join(base, f)
                 rel = os.path.relpath(src, lua_root).replace(os.sep, "/")
-                call("add_packed_files", {"pack_key": pack, "source_paths": [src],
-                                          "destination_paths": json.dumps([{"File": rel}])})
+                call("add_files_from_disk", {"pack": pack, "paths": [src], "pack_paths": [rel]})
                 print("  %5dB  %s" % (os.path.getsize(src), rel))
 
-    call("save_packfile", {"pack_key": pack})
+    call("save_pack", {"pack": pack})
     print("\nsaved %s" % pack_path)
 
 

@@ -34,16 +34,13 @@ Empires region keys and quest-battle variants, and the final survival battle.
 """
 import io
 import subprocess
-import json
 import os
 import re
 import sys
-import urllib.request
 import zlib
 
-URL = "http://127.0.0.1:45127/mcp"
-HDR = {"Content-Type": "application/json",
-       "Accept": "application/json, text/event-stream"}
+from rpfm_client import call, db, ensure_game, exists, open_pack
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "Modding Files", "source", "hellshard_missions")
 GAME = r"F:\SteamLibrary\steamapps\common\Total War WARHAMMER III"
@@ -737,42 +734,7 @@ def write():
             print("  removed     %s" % rel)
 
 
-# ---------------------------------------------------------------- RPFM MCP, raw HTTP
-_sid = None
-
-
-def _post(payload, headers):
-    req = urllib.request.Request(URL, data=json.dumps(payload).encode(),
-                                 headers=headers, method="POST")
-    with urllib.request.urlopen(req, timeout=300) as r:
-        return r.headers, r.read().decode()
-
-
-def _session():
-    global _sid
-    if _sid is None:
-        h, _ = _post({"jsonrpc": "2.0", "id": 1, "method": "initialize",
-                      "params": {"protocolVersion": "2024-11-05", "capabilities": {},
-                                 "clientInfo": {"name": "py", "version": "1"}}}, HDR)
-        _sid = h.get("mcp-session-id")
-        _post({"jsonrpc": "2.0", "method": "notifications/initialized"},
-              {**HDR, "mcp-session-id": _sid})
-    return {**HDR, "mcp-session-id": _sid}
-
-
-def call(tool, args):
-    _, body = _post({"jsonrpc": "2.0", "id": 9, "method": "tools/call",
-                     "params": {"name": tool, "arguments": args}}, _session())
-    for line in body.splitlines():
-        if line.startswith("data: ") and line[6:].strip():
-            d = json.loads(line[6:])
-            if "error" in d:
-                raise RuntimeError(d["error"])
-            res = d["result"]
-            if res.get("isError"):
-                raise RuntimeError("%s: %s" % (tool, json.dumps(res)[:400]))
-            return json.loads(res["content"][0]["text"])
-    raise RuntimeError("no result: %s" % body[:300])
+# ---------------------------------------------------------------- RPFM MCP, via rpfm_client
 
 
 def check_keys():
@@ -780,8 +742,8 @@ def check_keys():
     bad = 0
     for table, ver in TABLES + BATTLE_TABLES:
         path = os.path.join(SRC, "%s__%s.tsv" % (table, FRAG))
-        fields = call("definition_by_table_name_and_version",
-                      {"name": table, "version": ver})["Definition"]["fields"]
+        fields = call("table_definition",
+                      {"table_name": table, "version": ver})["columns"]
         keys = [f["name"] for f in fields if f["is_key"]]
         with io.open(path, encoding="utf-8") as fh:
             cols = fh.readline().rstrip("\n").split("\t")
@@ -803,31 +765,28 @@ def check_keys():
 
 
 def push():
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
+    ensure_game()
     check_keys()
-    pack = call("open_packfiles", {"paths": [PACK]})["StringContainerInfo"][0]
+    pack = open_pack(PACK)
     for table, ver in TABLES + BATTLE_TABLES:
         path = "db/%s/%s" % (table, FRAG)
         tsv_path = os.path.join(SRC, "%s__%s.tsv" % (table, FRAG))
-        if not call("packed_file_exists", {"pack_key": pack, "value": path})["Bool"]:
-            call("new_packed_file", {"pack_key": pack, "path": path,
-                                     "new_file": json.dumps({"DB": [FRAG, table, ver]})})
+        if not exists(pack, path):
+            call("create_file", {"pack": pack, "path": path, "kind": db(table, ver)})
             print("  created  %s (v%d)" % (path, ver))
-        call("import_tsv", {"pack_key": pack, "table_path": path, "tsv_path": tsv_path})
+        call("import_tsv", {"pack": pack, "path": path, "tsv_path": tsv_path})
         print("  imported %s" % path)
-    call("import_tsv", {"pack_key": pack, "table_path": LOC_PATH,
+    call("import_tsv", {"pack": pack, "path": LOC_PATH,
                         "tsv_path": os.path.join(SRC, "loc__%s.tsv" % FRAG)})
     print("  imported %s" % LOC_PATH)
     for rel in START_REL + CHAIN_REL:
-        call("add_packed_files", {"pack_key": pack, "source_paths": [staged(rel)],
-                                  "destination_paths": json.dumps([{"File": rel}])})
+        call("add_files_from_disk", {"pack": pack, "paths": [staged(rel)], "pack_paths": [rel]})
         print("  added    %s" % rel)
     for rel in DEAD_LUA_REL:
-        if call("packed_file_exists", {"pack_key": pack, "value": rel})["Bool"]:
-            call("delete_packed_files", {"pack_key": pack,
-                                         "paths": json.dumps([{"File": rel}])})
+        if exists(pack, rel):
+            call("delete_files", {"pack": pack, "paths": [rel]})
             print("  deleted  %s" % rel)
-    call("save_packfile", {"pack_key": pack})
+    call("save_pack", {"pack": pack})
     print("\nsaved %s" % PACK)
 
 
@@ -1305,7 +1264,4 @@ if __name__ == "__main__":
     else:
         write()
         if "--check" not in sys.argv:
-            try:
-                push()
-            except urllib.error.URLError:
-                sys.exit("RPFM is not running - its MCP server only exists while RPFM is open")
+            push()

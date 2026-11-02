@@ -503,10 +503,14 @@ GROUP_SIZE = {g: list(_GROUPS.values()).count(g) for g in set(_GROUPS.values())}
 
 
 def _tower(faction, total):
-    """The Tower route's annex objective, in the house's own group."""
+    """The Tower route's annex objective, in the house's own group. `total` counts the OTHER
+    seats to claim; the objective asks for one more, because `preclaim_own_seat` in
+    zz_derpy_toz_annex.lua performs the house's own annex ritual a callback after the first
+    tick, after CA's first-tick victory missions are issued, and PERFORM_RITUAL counts it.
+    Asking for `total` alone won Tordrek's route on turn one (Workshop report 2026-11-02)."""
     group = ANNEX_GROUP[faction] or "A"
     return ("PERFORM_RITUAL",
-            ["ritual_category DISTRICTS_ANNEX_T5_%s" % group, "total %d" % total])
+            ["ritual_category DISTRICTS_ANNEX_T5_%s" % group, "total %d" % (total + 1)])
 
 
 def _on_map(region, objectives):
@@ -534,7 +538,7 @@ ROUTES = {
         ("chains_of_domination", "Chains of Domination", [
             _tower("cr_chd_house_of_khorakk", 2),
             ("HAVE_AT_LEAST_X_OF_A_POOLED_RESOURCE",
-             ["pooled_resource wh3_dlc23_chd_conclave_influence", "total 60"]),
+             ["pooled_resource wh3_dlc23_chd_conclave_influence", "total 150"]),
         ]),
         ("the_collection", "The Collection", [
             ("DESTROY_FACTION", ["faction wh_main_grn_greenskins", "confederation_valid"]),
@@ -824,7 +828,7 @@ ROUTES = {
         ("daemonpact_of_the_deep", "Daemonpact of the Deep", [
             _tower("cr_chd_black_kraken_armada", 1),
             ("HAVE_AT_LEAST_X_OF_A_POOLED_RESOURCE",
-             ["pooled_resource wh3_dlc23_chd_conclave_influence", "total 60"]),
+             ["pooled_resource wh3_dlc23_chd_conclave_influence", "total 150"]),
         ]),
         # The grudge he sails for (Dreadfleet rulebook pp. 66-67): Barak Varr, which banished
         # him for shooting Red Brokk Gunnarsson a dozen times with a rivet claw. Gated on the
@@ -2556,8 +2560,9 @@ def check(quiet=False):
                             "objective with repeated conditions"
                             % (where, n, otype, MAX_SAME_TYPE_PER_ROUTE))
 
-                # An annex objective must stay under the house's own group size: a house can
-                # perform any annex ritual but its own.
+                # An annex objective must stay under the house's own group size: the other
+                # seats alone must reach it, in case the preclaim of its own seat fails. And it
+                # must be over 1, because that preclaim counts - a total of 1 is met on turn one.
                 for otype, conds in objectives:
                     if otype != "PERFORM_RITUAL":
                         continue
@@ -2573,6 +2578,9 @@ def check(quiet=False):
                         if tot > ceiling:
                             bad("%s: annex total %d exceeds what group %s offers this house (%d)"
                                 % (where, tot, group, ceiling))
+                        if ANNEX_GROUP[faction] == group and tot < 2:
+                            bad("%s: annex total %d is met on turn one by the preclaimed own seat"
+                                % (where, tot))
 
     # The route text: one paragraph per route, one explainer per ritual category in use, and
     # every line inside the player-text rules.
@@ -3664,6 +3672,15 @@ def selftest():
                 "an unachievable annex total was not caught"
             ROUTES["cr_chd_house_of_bzaark"][1][2][0] = saved[
                 "cr_chd_house_of_bzaark"][1][2][0]
+
+            # an own-group annex total the preclaimed own seat meets on turn one (Tordrek's
+            # route 2 as it shipped until 2026-11-02)
+            ROUTES["cr_chd_black_kraken_armada"][1][2][0] = (
+                "PERFORM_RITUAL", ["ritual_category DISTRICTS_ANNEX_T5_B", "total 1"])
+            assert any("met on turn one" in f for f in check(quiet=True)), \
+                "an annex total met by the preclaim was not caught"
+            ROUTES["cr_chd_black_kraken_armada"][1][2][0] = saved[
+                "cr_chd_black_kraken_armada"][1][2][0]
 
             # three of one objective type in a route - more than either source writes
             ROUTES["wh3_dlc23_chd_conclave"][1][2].append(

@@ -29,7 +29,7 @@ import io
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from import_house_ancillaries import call                      # noqa: E402
+from rpfm_client import call, ensure_game, open_pack         # noqa: E402
 from read_vanilla_cache import load                            # noqa: E402
 import read_pack_index as rpi                                  # noqa: E402
 
@@ -46,13 +46,13 @@ def is_penalty(value, positive_is_good):
 
 
 def report(pack_path, owner_filter=""):
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
-    pack = call("open_packfiles", {"paths": [pack_path]})["StringContainerInfo"][0]
+    ensure_game()
+    pack = open_pack(pack_path)
     tmp = tempfile.mkdtemp()
 
     def rows(path):
         dst = os.path.join(tmp, path.replace("/", "_") + ".tsv")
-        call("export_tsv", {"pack_key": pack, "table_path": path, "tsv_path": dst})
+        call("export_tsv", {"file": {"source": {"pack": pack}, "path": path}, "destination": dst})
         lines = io.open(dst, encoding="utf-8").read().replace("\r\n", "\n")
         lines = lines.rstrip("\n").split("\n")
         cols = lines[0].split("\t")

@@ -1026,7 +1026,8 @@ try:    body = zstandard.ZstdDecompressor().decompress(raw[4:], max_output_size=
 except: body = lz4.block.decompress(raw[4:], uncompressed_size=n)
 ```
 
-`open_packfiles` reports the format per pack in its `compress` field, so check rather than assume.
+RPFM's `pack_info` reports the format per pack in its `compression` field (`open_packfiles`'
+`compress` before 5.3), so check rather than assume.
 
 ---
 

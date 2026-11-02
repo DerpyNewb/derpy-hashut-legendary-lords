@@ -12,9 +12,10 @@ Needs RPFM open (the MCP server at 127.0.0.1:45127 only exists while it runs).
 Vanilla tables are cached under .skilltree_cache/ - delete it after a game patch.
 Exit 1 if anything is reported.
 """
-import collections, glob, json, os, shutil, sys, urllib.error, urllib.request
+import collections, glob, json, os, shutil, sys
 
-URL = "http://127.0.0.1:45127/mcp"
+from rpfm_client import call, ensure_game, open_pack, vanilla_table
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # tools/ -> workspace root
 CACHE = os.path.join(ROOT, ".skilltree_cache")
 PACK = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
@@ -24,65 +25,16 @@ VAN_TABLES = ["character_skill_nodes", "character_skills", "character_skill_node
               "character_skill_node_sets", "character_skill_node_set_items",
               "effects", "ancillaries", "agent_subtypes", "campaign_effect_scopes"]
 
-# ---------------------------------------------------------------- MCP client
-_sid = [None]
-_id = [0]
-
-def _rpc(method, params=None, notify=False):
-    body = {"jsonrpc": "2.0", "method": method}
-    if params is not None:
-        body["params"] = params
-    if not notify:
-        _id[0] += 1
-        body["id"] = _id[0]
-    hdr = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
-    if _sid[0]:
-        hdr["Mcp-Session-Id"] = _sid[0]
-    req = urllib.request.Request(URL, json.dumps(body).encode(), hdr)
-    with urllib.request.urlopen(req, timeout=1800) as r:
-        _sid[0] = _sid[0] or r.headers.get("Mcp-Session-Id")
-        raw = r.read().decode("utf-8", "replace")
-    if notify:
-        return None
-    out = None
-    for line in raw.splitlines():          # responses are SSE; the last data: line wins
-        if line.startswith("data:"):
-            try:
-                out = json.loads(line[5:].strip())
-            except ValueError:
-                pass
-    return out if out is not None else json.loads(raw)
-
-def _call(tool, args):
-    r = _rpc("tools/call", {"name": tool, "arguments": args})
-    res = r.get("result", {})
-    if r.get("error") or res.get("isError"):   # rmcp reports tool failure inside a 200
-        raise SystemExit("RPFM %s failed: %s" % (tool, json.dumps(r.get("error") or res)[:400]))
-    txt = "".join(c.get("text", "") for c in res.get("content", []))
-    try:
-        return json.loads(txt)
-    except ValueError:
-        return txt
-
 def fetch(dest):
     """Extract the pack's db/ + text/ as TSV and cache the vanilla tables."""
     need_van = [t for t in VAN_TABLES if not os.path.exists(os.path.join(CACHE, t + ".json"))]
-    try:
-        _rpc("initialize", {"protocolVersion": "2024-11-05", "capabilities": {},
-                            "clientInfo": {"name": "check_skill_trees", "version": "1"}})
-    except urllib.error.URLError:
-        raise SystemExit("RPFM is not running - its MCP server only exists while RPFM is open.")
-    _rpc("notifications/initialized", notify=True)
-    # dependency state is per-MCP-session, so this must happen in the same run
-    _call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": bool(need_van)})
-    _call("open_packfiles", {"paths": [PACK]})
-    _call("extract_packed_files", {
-        "pack_key": PACK,
-        "source_paths": json.dumps({"PackFile": [{"Folder": "db"}, {"Folder": "text"}]}),
-        "destination_path": dest, "export_as_tsv": True})
+    ensure_game(deps=bool(need_van))
+    key = open_pack(PACK)
+    call("extract_files", {"source": {"pack": key}, "paths": ["db", "text"],
+                           "destination": dest, "as_tsv": True})
     os.path.isdir(CACHE) or os.makedirs(CACHE)
     for t in need_van:
-        d = _call("get_tables_from_dependencies", {"value": t + "_tables"})
+        d = vanilla_table(t + "_tables")
         rows = sum(len(rf["data"]["Decoded"]["DB"]["table"]["table_data"]) for rf in d["VecRFile"])
         if not rows:                      # an unloaded dependency db answers empty, never errors
             raise SystemExit("vanilla %s came back empty - dependency database did not load" % t)

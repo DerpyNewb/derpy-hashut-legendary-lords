@@ -15,15 +15,15 @@ Run `tools/gen_victory_routes.py` first. This packs the FILES ON DISK, not the g
 objects, so a `--selftest`-only edit would otherwise ship the previous generate; the row-count
 gate below is what catches that.
 
-Never trust `import_tsv`'s "Success" - the verify pass re-opens the saved pack in a FRESH
-session and decodes every fragment back. Each py invocation is its own MCP session.
+Never trust `import_tsv`'s row count - the verify pass, run separately, re-opens the saved
+pack from disk and decodes every fragment back.
 """
-import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from import_house_ancillaries import call, check_keys      # noqa: E402
+from import_house_ancillaries import check_keys            # noqa: E402
+from rpfm_client import call, db, ensure_game, exists, open_pack   # noqa: E402
 import gen_victory_routes as G                             # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -62,7 +62,7 @@ EXPECTED_ROWS = {
 
 
 def plan():
-    """[(container_path, new_file_spec, tsv_basename, dir)], read from each TSV's meta line.
+    """[(container_path, create_file_kind, tsv_basename, dir)], read from each TSV's meta line.
 
     Taking the table version and destination path from RPFM's own `#<table>;<version>;<path>`
     line rather than a hardcoded list means a schema bump cannot silently write the wrong
@@ -77,10 +77,7 @@ def plan():
             meta = fh.readline().rstrip("\n").split("\t")[0]
         assert meta.startswith("#"), "%s has no RPFM meta line: %r" % (fn, meta)
         table, ver, path = meta[1:].split(";")
-        if table == "Loc":
-            spec = {"Loc": path.rsplit("/", 1)[-1].replace(".loc", "")}
-        else:
-            spec = {"DB": [path.rsplit("/", 1)[-1], table, int(ver)]}
+        spec = {"type": "loc"} if table == "Loc" else db(table, int(ver))
         assert path == path.lower(), "uppercase in a pack path crashes since 6.1: %s" % path
         out.append((path, spec, fn, SRC))
     return out
@@ -119,8 +116,8 @@ def gate(entries):
 
 
 def verify(pack_path, entries):
-    """Re-open the SAVED pack in this session and decode every fragment back out."""
-    pack = call("open_packfiles", {"paths": [pack_path]})["StringContainerInfo"][0]
+    """Re-open the SAVED pack from disk and decode every fragment back out."""
+    pack = open_pack(pack_path)
     bad = []
 
     # Round-trip every fragment: extract it back out AS TSV and count the rows. A file that
@@ -128,12 +125,9 @@ def verify(pack_path, entries):
     # the schema and holds what the source TSV holds.
     import tempfile
     with tempfile.TemporaryDirectory() as td:
-        call("extract_packed_files", {
-            "pack_key": pack,
-            "source_paths": json.dumps({"PackFile": [{"File": p} for p, _, _, _ in entries]}),
-            "destination_path": td,
-            "export_as_tsv": True,
-        })
+        call("extract_files", {"source": {"pack": pack},
+                               "paths": [p for p, _, _, _ in entries],
+                               "destination": td, "as_tsv": True})
         for path, _spec, fn, d in entries:
             want = rows_in(os.path.join(d, fn))
             got_path = os.path.join(td, *path.split("/")) + ".tsv"
@@ -148,13 +142,13 @@ def verify(pack_path, entries):
             print("  ok   %-56s %3d rows round-tripped" % (path, got))
 
     for rel in [SCRIPT_REL]:
-        if not call("packed_file_exists", {"pack_key": pack, "value": rel}).get("Bool"):
+        if not exists(pack, rel):
             bad.append("%s is not in the saved pack" % rel)
         else:
             print("  ok   %s" % rel)
 
     for rel in DEAD_SCRIPTS:
-        if call("packed_file_exists", {"pack_key": pack, "value": rel}).get("Bool"):
+        if exists(pack, rel):
             bad.append("SUPERSEDED %s is STILL in the pack" % rel)
     if not bad:
         print("  ok   all %d superseded script copies are gone" % len(DEAD_SCRIPTS))
@@ -168,7 +162,7 @@ def main():
     pack_path = sys.argv[1]
     entries = plan()
 
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
+    ensure_game()
 
     if "--verify-only" in sys.argv:
         bad = verify(pack_path, entries)
@@ -179,27 +173,25 @@ def main():
     gate(entries)
     check_keys(entries)
 
-    pack = call("open_packfiles", {"paths": [pack_path]})["StringContainerInfo"][0]
+    pack = open_pack(pack_path)
 
     for path, spec, fn, d in entries:
-        call("new_packed_file", {"pack_key": pack, "path": path,
-                                 "new_file": json.dumps(spec)})
-        call("import_tsv", {"pack_key": pack, "table_path": path,
-                            "tsv_path": os.path.join(d, fn)})
+        if not exists(pack, path):       # import_tsv replaces a table; it cannot make one
+            call("create_file", {"pack": pack, "path": path, "kind": spec})
+        call("import_tsv", {"pack": pack, "path": path, "tsv_path": os.path.join(d, fn)})
         print("  %5d  %s" % (rows_in(os.path.join(d, fn)), path))
 
     src = os.path.join(PACK_MIRROR, *SCRIPT_REL.split("/"))
-    call("add_packed_files", {"pack_key": pack, "source_paths": [src],
-                              "destination_paths": json.dumps([{"File": SCRIPT_REL}])})
+    call("add_files_from_disk", {"pack": pack, "paths": [src], "pack_paths": [SCRIPT_REL]})
     print("  %5dB  %s" % (os.path.getsize(src), SCRIPT_REL))
 
-    # RPFM answers happily when the path is not there, so this is safe to re-run.
+    # Only the copies still there, so this is safe to re-run.
     for rel in DEAD_SCRIPTS:
-        call("delete_packed_files", {"pack_key": pack,
-                                     "paths": json.dumps([{"File": rel}])})
+        if exists(pack, rel):
+            call("delete_files", {"pack": pack, "paths": [rel]})
         print("  %5s  %s" % ("del", rel))
 
-    call("save_packfile", {"pack_key": pack})
+    call("save_pack", {"pack": pack})
     print("\nsaved %s" % pack_path)
 
 

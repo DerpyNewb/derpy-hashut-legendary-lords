@@ -738,6 +738,12 @@ Two things about the two IEE houses that are worth not re-deriving:
   recruitment pool instead**. In IEE one claimable seat is the other of these two lords.
   The annex groups are read out of that Lua's `ANNEX_DISTRICTS` at generation time, never
   typed: a typed copy went stale twice.
+* **Every own-group annex objective asks for one MORE ritual than the seats it names.**
+  `preclaim_own_seat` performs the house's own annex ritual a callback after the first tick,
+  after CA's first-tick victory missions are issued, and `PERFORM_RITUAL` counts it. So "two
+  other seats" ships as `total 3`; `_tower()` adds the one. Until 2026-11-02 it did not, and
+  Tordrek's route II (`total 1` plus 60 influence against a start of 70) was won on turn one.
+  `check()` refuses an own-group total under 2.
 * **`ime_derpy_abnagg.lua` spawns Abnagg on `wh3_main_combi_region_barak_varr` (185, 366) as a
   converted `DERPY_CHD_NAVAL_HORDE` with no settlement of his own.** His routes therefore count
   raiding, captives, sacked coasts and battles; exactly one of the five (Infernal Artillery)

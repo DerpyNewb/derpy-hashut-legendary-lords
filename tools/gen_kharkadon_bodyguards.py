@@ -28,6 +28,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 import read_vanilla_db as rvd                                  # noqa: E402
 from read_pack_index import entries, paths                     # noqa: E402
+from rpfm_client import db                                     # noqa: E402
 
 OUT = os.path.join(ROOT, "Modding Files", "source", "kharkadon_bodyguards")
 PACK = os.path.join(ROOT, "Modding Files", "Modpacks", "!aa_derpy_hashut_legendary_lords.pack")
@@ -257,18 +258,17 @@ def headers():
 
 
 def fetch_headers():
-    from import_house_ancillaries import call
+    from rpfm_client import call, ensure_game, new_pack
     versions = {t: one(vanilla_ver(t), t) for t in TABLES}
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
-    pack = call("new_pack", {})["String"]
+    ensure_game()
+    pack = new_pack()
     tmp = tempfile.mkdtemp()
     out = {}
     for t, v in versions.items():
         path = "db/%s_tables/probe" % t
-        call("new_packed_file", {"pack_key": pack, "path": path,
-                                 "new_file": json.dumps({"DB": ["probe", t + "_tables", v]})})
+        call("create_file", {"pack": pack, "path": path, "kind": db(t + "_tables", v)})
         dst = os.path.join(tmp, t + ".tsv")
-        call("export_tsv", {"pack_key": pack, "table_path": path, "tsv_path": dst})
+        call("export_tsv", {"file": {"source": {"pack": pack}, "path": path}, "destination": dst})
         hdr, meta = open(dst, encoding="utf-8").read().split("\n")[:2]
         out[t] = dict(ver=v, cols=hdr.split("\t"), meta=meta)
     shutil.rmtree(tmp, ignore_errors=True)
@@ -317,12 +317,12 @@ def write_all(T, loc, H):
         d = os.path.join(OUT, "db", t + "_tables")
         os.makedirs(d, exist_ok=True)
         open(os.path.join(d, FRAG + ".tsv"), "w", encoding="utf-8", newline="\n").write(table_tsv(t, T[t], H))
-        plan.append(("db/%s_tables/%s" % (t, FRAG), {"DB": [FRAG, t + "_tables", H[t]["ver"]]}, FRAG + ".tsv", d,
+        plan.append(("db/%s_tables/%s" % (t, FRAG), db(t + "_tables", H[t]["ver"]), FRAG + ".tsv", d,
                      len(T[t])))
     d = os.path.join(OUT, "text")
     os.makedirs(d, exist_ok=True)
     open(os.path.join(d, FRAG + ".loc.tsv"), "w", encoding="utf-8", newline="\n").write(loc_tsv(loc))
-    plan.append((LOC_PATH, {"Loc": FRAG}, FRAG + ".loc.tsv", d, len(loc)))
+    plan.append((LOC_PATH, {"type": "loc"}, FRAG + ".loc.tsv", d, len(loc)))
     return plan
 
 
@@ -480,31 +480,28 @@ def snapshot(pack):
 
 
 def do_import(plan):
-    from import_house_ancillaries import call, check_keys
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
+    from import_house_ancillaries import check_keys
+    from rpfm_client import call, ensure_game, open_pack
+    ensure_game()
     check_keys([e[:4] for e in plan])
     before = snapshot(PACK)
-    try:
-        call("close_pack", {"pack_key": PACK})
-    except Exception:
-        pass
-    call("open_packfiles", {"paths": [PACK]})
+    key = open_pack(PACK)
     for path, spec, fn, d, n in plan:
         try:
-            call("delete_packed_files", {"pack_key": PACK, "paths": json.dumps([{"File": path}])})
+            call("delete_files", {"pack": key, "paths": [path]})
         except Exception:
             pass
-        call("new_packed_file", {"pack_key": PACK, "path": path, "new_file": json.dumps(spec)})
-        call("import_tsv", {"pack_key": PACK, "table_path": path, "tsv_path": os.path.join(d, fn)})
-    call("save_packfile", {"pack_key": PACK})
-    call("close_pack", {"pack_key": PACK})
+        call("create_file", {"pack": key, "path": path, "kind": spec})
+        call("import_tsv", {"pack": key, "path": path, "tsv_path": os.path.join(d, fn)})
+    call("save_pack", {"pack": key})
+    call("close_pack", {"pack": key})
     print("saved")
     # Verify the SAVED file, re-opened fresh, table by table.
     dest = tempfile.mkdtemp()
-    call("open_packfiles", {"paths": [PACK]})
-    call("extract_packed_files", {"pack_key": PACK, "export_as_tsv": True, "destination_path": dest,
-         "source_paths": json.dumps({"PackFile": [{"File": e[0]} for e in plan]})})
-    call("close_pack", {"pack_key": PACK})
+    key = open_pack(PACK)
+    call("extract_files", {"source": {"pack": key}, "paths": [e[0] for e in plan], "destination": dest,
+         "as_tsv": True})
+    call("close_pack", {"pack": key})
     bad = 0
     for path, spec, fn, d, n in plan:
         got = open(os.path.join(dest, *path.split("/")) + ".tsv", encoding="utf-8").read().split("\n")[2:]

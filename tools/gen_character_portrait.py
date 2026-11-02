@@ -177,7 +177,7 @@ def compare(stem):
 
 
 def pack(stem):
-    from rpfm_client import call
+    from rpfm_client import call, ensure_game, open_pack
     src = os.path.join(OUT, stem, "porthole.png")
     dst = pack_path(stem)
     before = {p: b for p, c, b in rpi.read(HLL, "")}
@@ -190,11 +190,11 @@ def pack(stem):
     staged = os.path.join(STAGED, *dst.split("/"))
     if os.path.exists(staged):
         shutil.copy2(staged, bak)
-    key = call("open_packfiles", {"paths": [HLL]})["StringContainerInfo"][0]
-    call("add_packed_files", {"pack_key": key, "source_paths": [src],
-                              "destination_paths": json.dumps([{"File": dst}])})
-    call("save_packfile", {"pack_key": key})
-    call("close_pack", {"pack_key": key})
+    ensure_game()
+    key = open_pack(HLL)
+    call("add_files_from_disk", {"pack": key, "paths": [src], "pack_paths": [dst]})
+    call("save_pack", {"pack": key})
+    call("close_pack", {"pack": key})
     after = {p: b for p, c, b in rpi.read(HLL, "")}
     changed = sorted(p for p in before if before[p] != after.get(p))
     ok = set(before) == set(after) and changed == [dst] and after[dst] == open(src, "rb").read()

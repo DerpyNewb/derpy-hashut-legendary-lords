@@ -47,7 +47,8 @@ from functools import lru_cache
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tools"))
-EX = os.path.join(ROOT, ".skilltree_cache", "extract")
+from rpfm_client import db                                     # noqa: E402
+EX =os.path.join(ROOT, ".skilltree_cache", "extract")
 OUT = os.path.join(ROOT, "Modding Files", "source", "hll_new_lords")
 PACK = os.path.join(ROOT, "Modding Files", "Modpacks", "!aa_derpy_hashut_legendary_lords.pack")
 GAME = r"F:\SteamLibrary\steamapps\common\Total War WARHAMMER III\data"
@@ -1331,6 +1332,10 @@ def check_annex_lua(texts=None):
                for m in re.finditer(r'key = "(DISTRICTS_ANNEX_T5_\w)", seats = \{(.*?)\}\},', body, re.S)]
         if got != want:
             bad.append("%s: ANNEX_DISTRICTS %s, toz_districts.py %s" % (name, got, want))
+        # A Started listener runs after CA's tier-four confederation_handler on a context whose
+        # ritual is freed - a native crash (Workshop report 2026-10-31). Completed only.
+        if '"RitualStartedEvent"' in text:
+            bad.append("%s: listens on RitualStartedEvent" % name)
     return bad
 
 
@@ -1347,7 +1352,7 @@ def check_frontend_army(front=None):
               for fac, army in re.findall(r'faction = "(\w+)".*?army = (.*?) \}', src, re.S)]
     for f in sorted(glob.glob(os.path.join(ROOT, "Modding Files", "pack", "script", "campaign", "cr_oldworld", "mod",
                                            "derpy_start_*.lua"))):
-        armies += re.findall(r'create_force_with_general\(\s*(?:--[^\n]*\s*)?"(\w+)",\s*"([^"]*)"',
+        armies += re.findall(r'create_force_with_general\(\s*(?:--[^\n]*\s*)?"(\w+)",\s*(?:derpy_hll_units\()?"([^"]*)"',
                              open(f, encoding="utf-8").read())
     assert len(armies) >= 13, armies
     bad = []
@@ -1585,6 +1590,9 @@ def selftest():
     moved = text.replace('suffix = "baal"', 'suffix = "QQQ"').replace('suffix = "black_dwarf"', 'suffix = "baal"') \
                 .replace('suffix = "QQQ"', 'suffix = "black_dwarf"')
     assert check_annex_lua({one: moved}), "a seat moved between districts in the Lua passed"
+    assert check_annex_lua({one: text.replace('"RitualCompletedEvent",\n\t\t\t\ttrue,\n\t\t\t\ton_annex_claimed',
+                                              '"RitualStartedEvent",\n\t\t\t\ttrue,\n\t\t\t\ton_annex_claimed')}), \
+        "an annex claim listener on RitualStartedEvent passed"
     assert not check_frontend_army(), check_frontend_army()
     front = open(os.path.join(ROOT, "Modding Files", "pack", *SCRIPTS[3].split("/")), encoding="utf-8").read()
     assert len(check_frontend_army(front.replace('("cr_chd_skullstack", {', '("cr_chd_skullstackz", {'))) == 1, \
@@ -1829,9 +1837,9 @@ def write_all(files):
         if table:
             ver = int(meta.split(";")[1])
             frag = inpack.rsplit("/", 1)[1]
-            plan.append((inpack, {"DB": [frag, table, ver]}, os.path.basename(path), os.path.dirname(path), len(rows)))
+            plan.append((inpack, db(table, ver), os.path.basename(path), os.path.dirname(path), len(rows)))
         else:
-            plan.append((inpack, {"Loc": inpack.rsplit("/", 1)[1][:-4]}, os.path.basename(path),
+            plan.append((inpack, {"type": "loc"}, os.path.basename(path),
                          os.path.dirname(path), len(rows)))
     blob, _e = portrait_bin()
     loose = []
@@ -1877,32 +1885,28 @@ def write_all(files):
 
 
 def do_import(plan, loose):
-    from import_house_ancillaries import call, check_keys
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
+    from import_house_ancillaries import check_keys
+    from rpfm_client import call, ensure_game, open_pack
+    ensure_game()
     check_keys([e[:4] for e in plan])
-    try:
-        call("close_pack", {"pack_key": PACK})
-    except Exception:
-        pass
-    call("open_packfiles", {"paths": [PACK]})
+    key = open_pack(PACK)
     from read_pack_index import paths
     existing = set(paths(PACK))
     for path, spec, fn, d, n in plan:
         if path not in existing:
-            call("new_packed_file", {"pack_key": PACK, "path": path, "new_file": json.dumps(spec)})
-        call("import_tsv", {"pack_key": PACK, "table_path": path, "tsv_path": os.path.join(d, fn)})
+            call("create_file", {"pack": key, "path": path, "kind": spec})
+        call("import_tsv", {"pack": key, "path": path, "tsv_path": os.path.join(d, fn)})
     for src, dest in loose:
-        call("add_packed_files", {"pack_key": PACK, "source_paths": [src],
-                                  "destination_paths": json.dumps([{"File": dest}])})
-    call("save_packfile", {"pack_key": PACK})
-    call("close_pack", {"pack_key": PACK})
+        call("add_files_from_disk", {"pack": key, "paths": [src], "pack_paths": [dest]})
+    call("save_pack", {"pack": key})
+    call("close_pack", {"pack": key})
     print("saved")
     # Verify the SAVED file, re-opened fresh.
     dest = tempfile.mkdtemp()
-    call("open_packfiles", {"paths": [PACK]})
-    call("extract_packed_files", {"pack_key": PACK, "export_as_tsv": True, "destination_path": dest,
-         "source_paths": json.dumps({"PackFile": [{"File": e[0]} for e in plan]})})
-    call("close_pack", {"pack_key": PACK})
+    key = open_pack(PACK)
+    call("extract_files", {"source": {"pack": key}, "paths": [e[0] for e in plan], "destination": dest,
+         "as_tsv": True})
+    call("close_pack", {"pack": key})
     bad = 0
     for path, spec, fn, d, n in plan:
         got = open(os.path.join(dest, *path.split("/")) + ".tsv", encoding="utf-8").read().split("\n")[2:]

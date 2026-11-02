@@ -196,9 +196,10 @@ common.call_context_command("CcoCampaignRoot", "",
 (the GUID is `list_box`'s). On `PanelOpenedCampaign` for `hellforge_panel_main` the list already
 exists, the value survives a switch to the Manufactory and back, and `hslider` rescales to the wider
 list on its own. Use `ceil((categories + 1) / 2)` to keep everything in two rows.
-`derpy_chd_house_units_hellforge.lua` does this. In the same handler it hides the Houses block's
-`group_title > unlock_bar_holder`, the level ladder, because a category with no Manufactory track
-can only show padlocks there. Two rows is the author's ruling, not just CA's default: do not add a
+`derpy_chd_hellforge_layout.lua` does this; House Units and Gunpowder Units ship it byte for byte
+(2026-11-02), so whichever pack wins the path it runs once. `derpy_chd_house_units_hellforge.lua`
+hides the Houses block's `group_title > unlock_bar_holder`, the level ladder, because a category
+with no Manufactory track can only show padlocks there. Two rows is the author's ruling, not just CA's default: do not add a
 third.
 
 ### The Manufactory's unit cards: one row, wrapped to two
@@ -219,7 +220,7 @@ shown once the category has upgrades running), and the upgrade list (`entries_ho
 above the furnace art. So the second row needs `category_upkeep` and `entries_holder` moved down by
 a card's height less that gap (70 px at 100% scale), and `entries_holder` and its
 `trait_list > list_clip` shortened by the same. The list holds three slots (285 px), so 380 px is
-still room to spare. `trait_list` itself ignores `Resize`. `derpy_chd_house_units_hellforge.lua`
+still room to spare. `trait_list` itself ignores `Resize`. `derpy_chd_hellforge_layout.lua`
 does all of this to every box, two rows and never more (author's ruling). It works the shift out
 from the box's own card height so UI scale does not break it, and uses `ItemsPerRow == 2` as the
 "done" mark. The boxes exist on `PanelOpenedCampaign` and survive an Armaments change; a 250 ms
@@ -463,6 +464,20 @@ them appended to `WarmachineUnits`, rebuilt from CA's current file by `gen_chd_h
 CA `.cco` files by path (IEE's `campaignselect.cco`, Mixer's `dlc25bookofgrudges.cco`). The four
 RoRs stay unpictured, as CA's own are.
 
+**Since 2026-11-02 Hashut's Gunpowder Units and Hashut's Tanks ship the same file** (`tools/patch_chd_units_hellforge.py`):
+their non-RoR tanks and trains (13, and the one tank they share) sit in this set and drew no card either. The `.cco` is whole-file
+and the pack that sorts first wins it, so both copies carry one list, `gen_chd_house_units.WARMACHINES`
+(16 units), and are byte-identical; both generators fail when a war machine in the set is missing
+from it. A key whose pack is not loaded is a null record, and `Join` drops it: measured in game
+2026-11-02, Gunpowder Units alone gives `Helforge.WarmachineUnits.Size` 20 (CA's 7 + 13, the three
+House Units keys gone). The War Machines box then drew 19 cards (CA's 6: the siege giant is not in
+the set) in two rows of 10 and 9; with House Units 22 in 11 and 11, 48 px inside the box each side;
+Hashut's Tanks alone 7. Read `Helforge.DisplayUnitsForInitiativeSet(...)` over `get_context_value`
+to see what a box will draw before opening it. The Manufactory tab is inactive until some category
+has an unlocked upgrade; on a turn-1 test save grant `wh3_dlc23_chd_hellforge_warmachine_unlocker`
+with factor `wh3_dlc23_chd_hell_forge_unit_cap`. `derpy_chd_aeromachines` also puts 5 gyros in
+this set and is NOT in the list.
+
 ### The table set for one category
 
 | Table | ver | Row |
@@ -606,6 +621,10 @@ One trap copied from CA by accident: their contact-immunity effect's `icon_negat
 | `derpy_chd_units` | `DLC23_CATEGORY_ZHARRGRON_INITIATIVES` "Zharrgron Engines" | `derpy_chd_art_trains` + `derpy_chd_turtle_tank` (16 units) | 14 |
 
 **Exactly one modded category ships — see §10 for why.**
+
+**Stale (read 2026-11-02):** the Workshop `derpy_chd_units` ships no `initiative_*` tables at all, so
+this category is gone and its tanks and trains take CA's War Machines upgrades. Its cap category
+`HELLFORGE_CAPS_ZHARRGRON` is still there.
 
 Eight stat upgrades (ammo, armour, reload, range, speed, physical resistance, explosion damage,
 barrier) plus six ability/attribute ones (Forgefire, Extra Reload, Black Powder Aplenty,

@@ -25,7 +25,8 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from import_house_ancillaries import call, check_keys      # noqa: E402
+from import_house_ancillaries import check_keys            # noqa: E402
+from rpfm_client import call, db, ensure_game, open_pack   # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXP = os.path.join(ROOT, "Modding Files", "source", "tordrek_vc_skills", "export")
@@ -312,16 +313,17 @@ def main():
     if "--selftest" in sys.argv:
         return selftest()
 
-    call("set_game_selected", {"game_name": "warhammer_3", "rebuild_dependencies": False})
+    ensure_game()
     os.path.isdir(EXP) or os.makedirs(EXP)
-    pack = call("open_packfiles", {"paths": [PACK]})["StringContainerInfo"][0]
+    pack = open_pack(PACK)
 
     files = {}
     for label, path in (("nodes", NODES), ("items", ITEMS),
                         ("links", LINKS), ("fx", FX)):
         tsv = os.path.join(EXP, path.rsplit("/", 1)[0].split("/")[1] + "__" +
                            path.rsplit("/", 1)[1] + ".tsv")
-        call("export_tsv", {"pack_key": pack, "table_path": path, "tsv_path": tsv})
+        call("export_tsv", {"file": {"source": {"pack": pack}, "path": path},
+                            "destination": tsv})
         header, meta, rows = read(tsv)
         files[label] = (tsv, header, meta, rows)
 
@@ -336,7 +338,8 @@ def main():
             if frag in (NODES, ITEMS):
                 continue
             tsv = os.path.join(ref, frag.replace("/", "__") + ".tsv")
-            call("export_tsv", {"pack_key": pack, "table_path": frag, "tsv_path": tsv})
+            call("export_tsv", {"file": {"source": {"pack": pack}, "path": frag},
+                                "destination": tsv})
             h, _m, rows = read(tsv)
             siblings[label] += dicts(h, rows)
     print("  siblings: %d nodes, %d set items" % (len(siblings["nodes"]),
@@ -356,14 +359,13 @@ def main():
     for label, path in (("nodes", NODES), ("items", ITEMS), ("links", LINKS), ("fx", FX)):
         # RPFM pads the meta line with trailing tabs out to the column count.
         table, ver, dest = files[label][2].split("	")[0][1:].split(";")
-        plan.append((dest, {"DB": [dest.rsplit("/", 1)[1], table, int(ver)]},
+        plan.append((dest, db(table, int(ver)),
                      os.path.basename(files[label][0]), EXP))
     check_keys(plan)
 
     for dest, spec, fn, d in plan:
-        call("import_tsv", {"pack_key": pack, "table_path": dest,
-                            "tsv_path": os.path.join(d, fn)})
-    call("save_packfile", {"pack_key": pack})
+        call("import_tsv", {"pack": pack, "path": dest, "tsv_path": os.path.join(d, fn)})
+    call("save_pack", {"pack": pack})
     print("\nsaved %s" % PACK)
 
 
