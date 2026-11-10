@@ -890,8 +890,7 @@ patched out of a running save.
 
 `derpy_chd_victory_objectives.lua` and `tools/check_victory_objectives.py` are **superseded and
 deleted** — that script existed to restore the subculture long victory through CA's table, which
-is moot once CA's entry point is disabled for those factions. One copy is archived at
-`docs/archive/derpy_chd_victory_objectives.lua.bak_superseded_20260907`.
+is moot once CA's entry point is disabled for those factions. The archived copy was deleted 2026-11-08.
 
 ### 12c. Rewards under 9.0, and the victory achievement (2026-10-11)
 
