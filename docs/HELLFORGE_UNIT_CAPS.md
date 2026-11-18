@@ -302,8 +302,14 @@ See `MEMORY`/`workshop-is-the-live-copy`.
   the cap counter (which `modify_unit_cap` increments) as a cost modifier, so the price creeps
   ~1% per limit owned. Reading it as evidence, it was added to compensate for the escalator
   that was not firing. With the real +25 now live, decide whether to keep it.
-- **`unit_allowances.faction_set` is empty** on all six `derpy_chd_units` rows. All 22 vanilla
-  rows name one.
+- ~~**`unit_allowances.faction_set` is empty** on all six `derpy_chd_units` rows.~~ **Fixed
+  2026-11-13** in `derpy_chd_units.pack` (6 rows) and `derpy_chd_tank.pack` (1 row), both now
+  `chaos_dwarfs`. Empty means EVERY faction (the schema's own note), so a Dwarf or Empire ally read
+  `unit_cap` 0 for turtle tanks and trains with no Hell-Forge to raise it: the coop "allied
+  recruitment 0/0" report. Measured in game before/after with `faction:unit_cap(unit)`: non-Chaos
+  Dwarf factions went 0 -> -1 (vanilla's Iron Daemon reads -1 for them too), Chaos Dwarf factions
+  unchanged. `derpy_chd_aeromachines` and `derpy_um_mecha_dogs` still leave it empty, harmlessly:
+  neither grants allied recruitment, so no other race can reach those units.
 - **Two packs ship the same fragment path.** `derpy_chd_tank.pack` and `derpy_chd_units.pack`
   both contain `db/<table>/derpy_chd_tanks`. Identical in-pack paths are a whole-file override,
   not a row merge, and `derpy_chd_units` sorts later, so it wins outright. (2026-09-25: the Dawi

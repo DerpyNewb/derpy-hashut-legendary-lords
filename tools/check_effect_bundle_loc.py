@@ -25,7 +25,7 @@ were wrong against measurement:
 `[hidden]` bundles are skipped by design. A cost modifier the player must never see is meant to
 have no loc; that is how it stays invisible.
 
-Needs RPFM open (the MCP server only exists while it is).
+Needs rpfm_server, which tools/rpfm_client.py starts headless if RPFM is closed.
 """
 import os
 import sys

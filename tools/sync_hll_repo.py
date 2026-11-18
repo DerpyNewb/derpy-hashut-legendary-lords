@@ -37,7 +37,7 @@ TOOLS = [
     # the two lords added 2026-10-03, Zochaz, and what was built on them
     "gen_new_house_lords.py", "gen_new_lords_cb.py", "gen_kharkadon_bodyguards.py",
     "gen_zochaz.py", "gen_portrait_settings.py", "gen_character_portrait.py",
-    "make_toz_seat_banner.py",
+    "make_toz_seat_banner.py", "make_skullstack_flag.py",
     # the naval horde (Abnagg and Tordrek) and Tordrek's Vampire Coast skills
     "gen_naval_horde_units.py", "gen_naval_horde_phase6.py", "gen_naval_horde_admiral.py",
     "gen_naval_horde_tordrek.py", "import_naval_horde.py", "gen_tordrek_vc_skills.py",
@@ -50,7 +50,7 @@ TOOLS = [
     "check_effect_signs.py", "check_effect_bundle_loc.py",
     "check_lua_api.py", "check_lua_undeclared.py", "check_lua_literal_left.py",
     # readers and the RPFM client everything above imports
-    "import_house_ancillaries.py", "rpfm_client.py", "read_pack_index.py", "read_animpack.py",
+    "import_house_ancillaries.py", "rpfm_client.py", "rpfm_mcp_bridge.py", "read_pack_index.py", "read_animpack.py",
     "read_vanilla_cache.py", "fetch_vanilla_tables.py", "read_vanilla_db.py",
     "gen_commodity_icons.py",
     # this file and its copier

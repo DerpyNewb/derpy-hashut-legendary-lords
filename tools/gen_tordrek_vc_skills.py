@@ -19,7 +19,7 @@ replaces the whole file. Idempotent: a row already present is not added twice.
     py tools/gen_tordrek_vc_skills.py --check    # export and edit only, no write
     py tools/gen_tordrek_vc_skills.py --selftest
 
-Needs RPFM open (the MCP server only exists while it is).
+Needs rpfm_server, which tools/rpfm_client.py starts headless if RPFM is closed.
 """
 import os
 import sys

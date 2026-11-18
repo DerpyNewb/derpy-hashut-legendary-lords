@@ -37,13 +37,14 @@ ritual objective has a one-line explainer. `import_victory_routes.py` pushes the
 the pack and verifies the saved file in a fresh RPFM session.
 
 **New lords.** `gen_new_house_lords.py` builds two lords from one table: Kharkadon, Overlord
-of Zharrduk, and the Captain of the Uzkul Mingol. That covers skill trees, traits, items,
-Subjugation seats, start scripts and portraits. `gen_zochaz.py` adds a lord with no faction of
-his own. `gen_new_lords_cb.py` gives them custom battle entries, and
+of Zharrduk, and Zhorgrath the Reaver, who leads the Uzkul Mingol Company. That covers skill
+trees, traits, items, Subjugation seats, start scripts and portraits. `gen_zochaz.py` adds a
+lord with no faction of his own. `gen_new_lords_cb.py` gives them custom battle entries, and
 `gen_kharkadon_bodyguards.py` gives Kharkadon four bodyguard options. Portraits and seat art
 come from `gen_portrait_settings.py`, `gen_character_portrait.py` and
-`make_toz_seat_banner.py`. Their art comes from in-game screenshots and the game's own files,
-so none of it is published here.
+`make_toz_seat_banner.py`, and `make_skullstack_flag.py` draws the Uzkul Mingol Company's
+flag. Their art comes from in-game screenshots, a collaborator's drawings and the game's own
+files, so none of it is published here.
 
 **The naval horde.** `gen_naval_horde_units.py`, `_phase6.py`, `_admiral.py` and
 `_tordrek.py` build the ships' build queue, roster, heroes and Tordrek's separate Vampire
@@ -68,7 +69,7 @@ plus the RPFM client.
 
 ## How it is tested
 
-There is no test framework. Twenty of the tools carry a `--selftest`, and the generators check
+There is no test framework. 23 of the tools carry a `--selftest`, and the generators check
 their output before writing it.
 
 - **The shipped Lua runs.** `gen_victory_routes.py --selftest` runs the generated script
@@ -85,7 +86,8 @@ their output before writing it.
 ## Running it
 
 You need Python 3 with Pillow, numpy, zstandard, lz4 and openpyxl, and Lua 5.1.5. Imports need
-[RPFM](https://github.com/Frodo45127/rpfm) open with its MCP server. Many tools also read your
+[RPFM](https://github.com/Frodo45127/rpfm) 5.3 or later: `tools/rpfm_client.py` starts its
+`rpfm_server` in the background when the RPFM window is closed. Many tools also read your
 own Total War: WARHAMMER III install; the paths are at the top of `tools/read_vanilla_db.py` and
 the other readers.
 
@@ -100,6 +102,7 @@ py tools/gen_commodity_icons.py --selftest
 py tools/gen_tordrek_vc_skills.py --selftest
 py tools/patch_army_banner.py --selftest
 py tools/read_vanilla_db.py --selftest
+py tools/rpfm_mcp_bridge.py --selftest
 py tools/sync_guilds_repo.py --selftest
 py tools/sync_hll_repo.py --selftest
 ```
@@ -108,7 +111,9 @@ The rest need inputs that are not published:
 
 - the mod's own staged scripts and tables (the generators cross-check against them);
 - a cache of vanilla tables built by `tools/fetch_vanilla_tables.py`;
-- CA's scripting documentation from the Assembly Kit, for `check_lua_api.py`.
+- CA's scripting documentation from the Assembly Kit, for `check_lua_api.py`;
+- `make_ic_rebel_flags.py` from [derpy-iron-court](https://github.com/DerpyNewb/derpy-iron-court),
+  which `make_skullstack_flag.py` imports to read CA's flag plates.
 
 ## Licence and legal
 

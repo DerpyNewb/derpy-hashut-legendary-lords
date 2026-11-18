@@ -969,14 +969,15 @@ ROUTES = {
                                  "confederation_valid"]),
         ]),
     ],
-    # The Uzkul Mingol Company (IEE's cr_chd_skullstack) and its Captain, added 2026-10-11. No
-    # Lexicanum entry, so the routes come from his own line: Company Charter, Prospectors, Ivory
-    # Road Factors, Spoils of Ind, The Long March. Map-agnostic for now: named places in Ind are
-    # phase 4. LAST in this dict, like Kharkadon: purse and trophy rotate by HOUSES.index.
+    # The Uzkul Mingol Company (IEE's cr_chd_skullstack), added 2026-10-11. No Lexicanum entry.
+    # Its lord became Zhorgrath the Reaver on 2026-11-18 (a collaborator's character); the route
+    # text follows his bio, the objectives and slugs did not move (spoils_of_ind is a key now,
+    # its display name is Spoils of Conquest). LAST in this dict, like Kharkadon: purse and
+    # trophy rotate by HOUSES.index.
     "cr_chd_skullstack": [
-        # I: the plunder the Charter is paid from. Every type here already ships in Abnagg's or
+        # I: the plunder he no longer shares. Every type here already ships in Abnagg's or
         # Vraznak's routes, and 7,500 is VCO's own raiding figure.
-        ("spoils_of_ind", "Spoils of Ind", [
+        ("spoils_of_ind", "Spoils of Conquest", [
             ("EARN_X_AMOUNT_FROM_RAIDING", ["total 7500"]),
             ("OCCUPY_LOOT_RAZE_OR_SACK_X_SETTLEMENTS", ["total 20"]),
             ("CAPTURE_X_BATTLE_CAPTIVES", ["total 2000"]),
@@ -1256,22 +1257,22 @@ LORE = {
         "their tribute, and Kharkadon will call Zharrduk safe when both are gone from the "
         "world, and not before."),
 
-    # Uzkul Mingol Company: the Captain (skill line only)
+    # Uzkul Mingol Company: Zhorgrath the Reaver (the collaborator's bio and skill line, 2026-11-18)
     "derpy_victory_type_skullstack_1_spoils_of_ind": (
-        "The temples of Ind are full of gold, and the Uzkul Mingol Company is full of people who "
-        "know it. The Captain pays by the town sacked and the hoard taken, and the hobgoblins "
-        "in the column fight for exactly that. The Charter names the Company's share of "
-        "everything it finds, and the Captain means for there to be a great deal to find."),
+        "Zhorgrath won battle after battle for the industrial lords of Zharr-Naggrund and watched "
+        "them take the spoils of every one. He keeps them now. He pays his hobgoblins by the town "
+        "sacked and the hoard taken, and every captive is put in chains and sent to feed the "
+        "furnaces of Hashut."),
     "derpy_victory_type_skullstack_2_the_company_charter": (
-        "The Company's factors sit in every market from Ind to the Dark Lands, taking their cut, "
-        "and its prospectors send every seam they find to the forges. The houses of the Forge "
-        "District are its best customers. The Captain would rather own them than sell to them, "
-        "and nothing in the Charter forbids it."),
+        "The Company still trades under its charter from Zharr-Naggrund, and the houses of the "
+        "Forge District are its best customers. Zhorgrath once served masters like them and "
+        "watched them claim his spoils. Now he would rather own them than sell to them, and "
+        "nothing in the Charter forbids it."),
     "derpy_victory_type_skullstack_3_the_long_march": (
-        "An expedition that stops is an expedition that starves. The Company's road runs from "
-        "the Dark Lands to the markets of Ind, and anything that stands across it is in the "
-        "way, the greenskins first. No one rises to lead the Company by being merciful, or "
-        "slow, and the Captain is neither."),
+        "Where Zhorgrath marches, the enemies of the Dawi-Zharr are crushed, and the greenskins "
+        "have always stood first among them. The Company does not stop between wars, and it "
+        "leaves no foe standing behind it. For "
+        "Zhorgrath, conquest is not merely a duty. It is his birthright."),
 }
 
 # One line per ritual category, drawn directly above every PERFORM_RITUAL of that

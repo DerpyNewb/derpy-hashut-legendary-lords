@@ -21,7 +21,7 @@ spreadsheet. Read it against each skill's own description; that is what found th
 Custom effects are read from the pack's own `effects_tables`, vanilla ones from
 `.skilltree_cache`, so a mod's minted effect is judged by the flag it actually ships.
 
-Needs RPFM open (the MCP server only exists while it is).
+Needs rpfm_server, which tools/rpfm_client.py starts headless if RPFM is closed.
 """
 import os
 import sys

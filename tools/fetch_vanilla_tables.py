@@ -3,8 +3,8 @@
     py tools/fetch_vanilla_tables.py dilemmas rituals ...   (names WITHOUT the _tables suffix)
 
 check_skill_trees.fetch() only pulls its own fixed VAN_TABLES list; this is the same call
-with the list on the command line. Already-cached names are skipped. Needs RPFM open, with
-its vanilla data loaded - rpfm_client.ensure_game(deps=True) loads it, and rebuilds RPFM's
+with the list on the command line. Already-cached names are skipped. Needs rpfm_server (it starts
+itself) with its vanilla data loaded - rpfm_client.ensure_game(deps=True) loads it, and rebuilds RPFM's
 dependency cache first only when that cache is outdated.
 """
 import json, os, sys

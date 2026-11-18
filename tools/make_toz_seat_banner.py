@@ -46,8 +46,10 @@ PREVIEW = os.path.join(ROOT, ".skilltree_cache", "toz_seat_banner_preview.png")
 
 # faction key -> (flag source, banner_colour_primary, banner_colour_secondary)
 HOUSES = {
-    # IEE's row, which this pack ships: khaki cloth, the dark brown of its skulls
-    "cr_chd_skullstack": ((IEE, "ui/flags/cr_chd_skullstack/mon_256.png"), "989964", "44302A"),
+    # IEE's row, which this pack ships: khaki cloth, dark brown device. The flag is OURS since 2026-11-18
+    # (the collaborator's chaos star, tools/make_skullstack_flag.py --write), staged, not IEE's skulls
+    "cr_chd_skullstack": (os.path.join(ROOT, "Modding Files", "pack", "ui", "flags", "cr_chd_skullstack",
+                                       "mon_256.png"), "989964", "44302A"),
     # CA's row (RPFM export of db.pack): teal cloth, red device
     "wh3_dlc23_chd_minor_faction": ((os.path.join(GAME, "ui.pack"), "ui/flags/wh3_dlc23_chd_minor_faction/mon_256.png"),
                                     "008080", "C31515"),
@@ -64,6 +66,8 @@ def rgb(hexs):
 
 
 def png(src):
+    if isinstance(src, str):                    # a staged file of ours
+        return Image.open(src).convert("RGBA")
     pack, path = src
     d = rpi.read(pack, path)[0][2]
     if d[:4] != b"\x89PNG":                     # CA's ui packs: u32 length, then zstd

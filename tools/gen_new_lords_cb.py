@@ -22,12 +22,12 @@ from gen_new_house_lords import custom_battle_portrait
 FRAG = "derpy_hll_new_lords_cb"
 OUT = os.path.join(Z.ROOT, "Modding Files", "source", "new_lords_cb")
 
-# subtype: (forename, surname, arts id, [items]). Kharkadon wears CA's own names
-# (gen_new_house_lords.py LORDS); the Captain's name is the placeholder 12412536.
+# subtype: (forename, surname, arts id, [items]). Kharkadon wears CA's own names; Zhorgrath the
+# Reaver's are minted by gen_new_house_lords.py LORDS (12412536 + family name 12412538).
 LORDS = {
     "derpy_kharkadon": ("212779775", "318034614", "696991701",
                        ["derpy_kharkadon_weapon", "derpy_kharkadon_talisman"]),
-    "derpy_uzkul": ("12412536", "", "696991702", ["derpy_uzkul_weapon", "derpy_uzkul_talisman"]),
+    "derpy_uzkul": ("12412536", "12412538", "696991702", ["derpy_uzkul_weapon", "derpy_uzkul_talisman"]),
 }
 CHARS, ITEMS = "battle_set_piece_armies_characters_tables", "battle_set_piece_armies_characters_items_tables"
 

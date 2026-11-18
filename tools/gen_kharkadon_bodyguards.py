@@ -19,7 +19,6 @@ the Workshop copy first (the Workshop copy is the live one) and deploy back afte
 import copy
 import json
 import os
-import re
 import shutil
 import sys
 import tempfile
@@ -47,9 +46,9 @@ ICON = "ui/skins/default/equipment_items_armour.png"
 # Does the clone's bonus_hit_points also land on the officer entity? Every entity of an ordinary
 # unit gets it, so yes until the game says otherwise (spec open question 1). One flag, one cell.
 STACKS_BONUS = True
-# Unit sets the clone must NOT inherit from its base: multiplayer caps count it as a recruit, and the
-# all-RoR set would treat an unrecruitable lord's unit as a Regiment of Renown.
-NOT_SETS = re.compile(r"^mp_cap_|^wh2_main_ror_units_all$")
+# A clone is in Kharkadon's own unit sets and no others. It used to inherit its base unit's sets too
+# (minus mp_cap_* and the all-RoR set), which put Kharkadon in every Chaos Dwarf infantry set, so CA's
+# infantry techs and other lords' infantry skills listed and buffed him (author's report, 2026-11-18).
 # Per-man stats are the base unit's; these must equal the base on every clone (the spec's section 3).
 KEEP = ["armour", "melee_attack", "melee_defence", "morale", "charge_bonus", "shield", "primary_melee_weapon",
         "primary_missile_weapon", "spacing", "rank_depth", "man_entity", "man_animation", "training_level"]
@@ -149,7 +148,7 @@ def build():
     k_grp = one(where(lords("units_to_groupings_military_permissions"), unit=LORD), "lord military group")
     k_att = [x["attribute"] for x in where(lords("unit_attributes_to_groups_junctions"),
                                            attribute_group=k_lu["attribute_group"])]
-    v_abil, v_sets = vanilla("land_units_to_unit_abilites_junctions"), vanilla("unit_set_to_unit_junctions")
+    v_abil = vanilla("land_units_to_unit_abilites_junctions")
     v_bul, v_banner = vanilla("ui_unit_bullet_point_unit_overrides"), vanilla("unit_banner_unit_height_offsets")
     v_att = vanilla("unit_attributes_to_groups_junctions")
     v_uv = vanilla("unit_variants")
@@ -181,11 +180,8 @@ def build():
             T["land_units_to_unit_abilites_junctions"].append(dict(ability=a[0], land_unit=C, culture=a[1]))
         vu = one(where(v_uv, unit=B), "unit_variants " + B)
         T["unit_variants"].append(dict(faction="", unit=C, name=C, variant=vu["variant"], unit_card="placeholder"))
-        seen = set()
-        for x in k_sets + [s for s in where(v_sets, unit_record=B) if not NOT_SETS.search(s["unit_set"])]:
-            if x["unit_set"] not in seen:
-                seen.add(x["unit_set"])
-                T["unit_set_to_unit_junctions"].append(dict(x, unit_record=C))
+        for x in k_sets:
+            T["unit_set_to_unit_junctions"].append(dict(x, unit_record=C))
         for b in sorted({x["bullet_point"] for x in k_bul + where(v_bul, unit_key=B)}):
             T["ui_unit_bullet_point_unit_overrides"].append(dict(bullet_point=b, unit_key=C))
         T["unit_banner_unit_height_offsets"].append(dict(one(where(v_banner, unit_record=B), "banner " + B),
@@ -253,7 +249,7 @@ def build():
 # ------------------------------------------------------------------------------------------ output
 def headers():
     if not os.path.exists(HDR_JSON):
-        raise SystemExit("no %s - run with --fetch-headers (needs RPFM open)" % HDR_JSON)
+        raise SystemExit("no %s - run with --fetch-headers (rpfm_server starts itself)" % HDR_JSON)
     return json.load(open(HDR_JSON, encoding="utf-8"))
 
 
@@ -409,8 +405,10 @@ def check(T, loc, H):
         if "wh3_main_unit_passive_single_entity" in {x["ability"] for x in
                                                      where(T["land_units_to_unit_abilites_junctions"], land_unit=C)}:
             bad.append("%s: a 50-man unit carries the single-entity passive" % C)
-        if any(NOT_SETS.search(x["unit_set"]) for x in where(T["unit_set_to_unit_junctions"], unit_record=C)):
-            bad.append("%s: joined a set a lord's unit must not join" % C)
+        own = {x["unit_set"] for x in where(lords("unit_set_to_unit_junctions"), unit_record=LORD)}
+        got = [x["unit_set"] for x in where(T["unit_set_to_unit_junctions"], unit_record=C)]
+        if sorted(got) != sorted(own):
+            bad.append("%s: unit sets %s, Kharkadon's own are %s" % (C, sorted(got), sorted(own)))
     if any(r["icon_name"] != ICON for r in T["units_custom_battle_mounts"]):
         bad.append("custom battle mount icon is not the armour icon")
     if "ui/campaign ui/skills/" + SKILL_ICON.lower() not in ui_paths():
@@ -446,6 +444,9 @@ def selftest(T, loc, H):
             dict(ability="wh3_main_unit_passive_single_entity", land_unit=OPTIONS[0]["key"], culture="*")),
         "capset": lambda t: t["unit_set_to_unit_junctions"].append(
             dict(t["unit_set_to_unit_junctions"][0], unit_set="mp_cap_unit_x")),
+        "infset": lambda t: t["unit_set_to_unit_junctions"].append(
+            dict(t["unit_set_to_unit_junctions"][0], unit_set="wh3_dlc23_chd_melee_chaos_dwarfs")),
+        "noset": lambda t: t["unit_set_to_unit_junctions"].pop(0),
         "icon": lambda t: t["ancillary_types"][0].update(ui_icon="ui/units/icons/no_such_unit.png"),
         "column": lambda t: t["effects"][0].pop("icon"),
         "class": lambda t: t["land_units"][0].update(**{"class": "inf_mel"}),

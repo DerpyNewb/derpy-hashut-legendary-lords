@@ -1,10 +1,12 @@
 """Two new house lords for the Hashut's Legendary Lords pack, on CA's Overseer model.
 
     the Overlord of Zharrduk         derpy_kharkadon  leads wh3_dlc23_chd_minor_faction (CA's Overlords of Zharrduk)
-    the Captain of the Uzkul Mingol  derpy_uzkul     leads cr_chd_skullstack (IEE's Uzkul Mingol Company)
+    Zhorgrath the Reaver             derpy_uzkul     leads cr_chd_skullstack (IEE's Uzkul Mingol Company)
 
-Both names are PLACEHOLDERS - every player-facing string is in LORDS below, nowhere else, so a
-rename is one edit here and a re-run. The keys are faction-based and never change.
+Kharkadon wears CA's own names; Zhorgrath (2026-11-18, a collaborator's character, the
+placeholder "Captain of the Uzkul Mingol" before) wears two minted ones. Every player-facing
+string is in LORDS and the tables below it, nowhere else, so a rename is one edit here and a
+re-run. The keys are faction-based and never change.
 
 Built by CLONING Balur, not by authoring: every row the pack holds for derpy_balur and for his
 house (the Fists of Hashut's Tower of Zharr seat, AI membership, usurp incidents) is copied with
@@ -75,8 +77,19 @@ LORDS = [
          # in Partypus's style), all from an in-game screenshot by derive.py in that folder. A lord
          # with `portraits` ships them under his own stem; without it, CA's `variant` porthole.
          portraits=os.path.join(ROOT, "Modding Files", "source", "portraits", "derpy_kharkadon")),
+    # Zhorgrath the Reaver (2026-11-18, a collaborator's character): forename 12412536 (was the
+    # placeholder "Captain of the Uzkul Mingol") + family name 12412538, both minted here, the way
+    # Kharkadon wears CA's forename + family name. 12412537 is Zochaz's.
     dict(sub="derpy_uzkul", faction="cr_chd_skullstack", fslug="skullstack",
-         name_id="12412536", name="Captain of the Uzkul Mingol", short="the Captain",
+         name_id="12412536", name="Zhorgrath the Reaver", short="Zhorgrath",
+         forename="Zhorgrath", surname_id="12412538", surname="the Reaver",
+         # his own model (2026-11-18): the collaborator's (NorscanWarlord) overseer body and head 05
+         # with Zhorgrath's axe and shield, copied into !!!derpy_chd_assets under norscanwarlord_
+         # names by tools/gen_zhorgrath_model.py. CA's Overseer animations, so no `anim`.
+         mesh="norscanwarlord_zhorgrath",
+         # his own 2D art (2026-11-18, approved: the close-ups; the wider first set is kept in
+         # v1_bust/ there), from a battle screenshot of that model by derive.py in that folder
+         portraits=os.path.join(ROOT, "Modding Files", "source", "portraits", "derpy_uzkul"),
          house="Uzkul Mingol Company", variant="chd_overseer_campaign_02",
          donor_art="wh3_dlc23_art_set_chd_overseer_02", arts_id="696991702", ability_id="13354702",
          frontend=["cr_political_party_combi_chd_skullstack", "cr_oldworld_political_party_chd_skullstack"], ma=65, md=45,
@@ -108,7 +121,9 @@ SKIP = {
     "faction_potential_categories_tables",
     "frontend_faction_leaders_tables",  # written from LORDS[...]["frontend"], see frontend()
 }
-SKIP_LOC = re.compile(r"victory_types_|missions_localised_|frontend_faction_leaders_|"
+# mission_text_: gen_victory_routes.py's route lore, keyed by house slug, so Balur's cloned as
+# Gargath's lines under the two new houses' slugs (caught 2026-11-18, never imported).
+SKIP_LOC = re.compile(r"victory_types_|missions_localised_|mission_text_|frontend_faction_leaders_|"
                       r"factions_screen|factions_attack|factions_defend|derpy_chd_fists_of_hashut")
 # Balur rows that are his alone
 DROP_ROW = re.compile(r"whirlwind_of_death")
@@ -178,51 +193,60 @@ SKILLS = {
                         (KS + "upkeep", C, [-25]),
                         (KS + "xp", C, [30])]),
     },
-    # The Company: a chartered expedition hunting gold in Ind, living on convoys, trade and plunder.
-    # Its hobgoblins are hired on the spot; its Chaos Dwarfs are a long way from home.
+    # Zhorgrath the Reaver (2026-11-18). Skill names are the collaborator's; the line is his bio:
+    # conquest, enslavement, iron-clad warriors, the spoils his old masters used to take. The
+    # Company keeps one link to its old business, Charter Trade as the 4_2 choice; its convoys and raids
+    # left the faction bundle on 2026-11-18 (TRAIT_BUNDLE).
+    # Iron Tyrant / Hashut's Iron Will use the "Chaos Dwarf Melee Infantry" effects CA itself grants
+    # (wh3_dlc23_skill_chd_army_buff_melee_chaos_dwarfs, Drazhoath, tech military_3), not the
+    # chd_chaos_dwarfs_and_hobgoblins family no CA row grants.
     "derpy_uzkul": {
-        "1": (4, "campaign_military_spending.png", "Company Charter",
-              "The Charter names the Company's share of everything it finds. The Captain makes sure "
-              "there is a lot to find.",
-              [("wh_main_effect_force_all_campaign_post_battle_loot_mod", C, [15]),
-               ("wh_main_effect_force_all_campaign_raid_income", F, [15])]),
-        "2_1": (11, "character_construction.png", "Prospectors",
-                "Company prospectors walk ahead of the column, and every seam they find goes to the forges.",
-                [("wh3_dlc23_pooled_resource_chd_armaments_modifier", "character_to_province_own", [5, 10, 15]),
-                 ("wh3_dlc23_pooled_resource_chd_raw_material_efficiency", "character_to_province_own", [5, 10, 15])]),
-        "2_2": (11, "campaign_military_spending.png", "Ivory Road Factors",
-                "The Company's factors sit in every market from Ind to the Dark Lands, taking their cut.",
-                [("wh_main_effect_economy_trade_tariff_mod", "character_to_faction_unseen", [5, 10, 15]),
-                 ("wh2_main_effect_economy_gdp_mod_trade_sea_global", "character_to_region_own_factionwide", [5, 10, 15])]),
-        "2_3": (11, "character_damage.png", "Spoils of Ind",
-                "The temples of Ind are full of gold, and the Company is full of people who know it.",
-                [("wh2_main_effect_force_all_campaign_sacking_income", C, [10, 20, 30]),
-                 ("wh_main_effect_force_all_campaign_post_battle_loot_mod", C, [5, 10, 15])]),
-        "2_4": (11, "character_movement.png", "The Long March",
-                "An expedition that stops is an expedition that starves.",
+        "1": (4, "character_damage.png", "The Reaver",
+              "Zhorgrath once won battles for the industrial lords of Zharr-Naggrund and watched them "
+              "take the spoils. Now he keeps them.",
+              [("wh_main_effect_character_stat_melee_attack", C, [8]),
+               ("wh_main_effect_force_all_campaign_post_battle_loot_mod", C, [15])]),
+        "2_1": (11, "character_movement.png", "Ashen Conqueror",
+                "Zhorgrath's host crosses the ash wastes without rest, from one conquest to the next.",
                 [("wh_main_effect_force_all_campaign_movement_range", F, [3, 6, 9]),
                  ("wh_main_effect_force_all_campaign_replenishment_rate", F, [3, 6, 9])]),
-        "4_1": (24, "character_damage.png", "Gold Fever",
-                "The Captain pays by the town sacked and the hoard taken. The hobgoblins fight like it - "
-                "for the gold, and only as long as the gold holds out.",
+        # CA's own post-battle Labour skill (wh3_dlc23_skill_chd_campaign_post_battle) is the _dummy
+        # at character_to_character_own, 5/10/15; the plain key is the faction-bundle half.
+        "2_2": (11, "character_construction.png", "Forged in Cruelty",
+                "Every captive Zhorgrath takes is put in chains and sent to feed the furnaces of Hashut.",
+                [("wh3_dlc23_effect_force_chd_campaign_post_battle_labour_dummy", C, [5, 10, 15]),
+                 ("wh3_dlc23_pooled_resource_chd_armaments_modifier", "character_to_province_own", [5, 10, 15])]),
+        "2_3": (11, "battle_armour.png", "Iron Tyrant",
+                "Zhorgrath's warriors march in the heaviest iron the Company can take, and the earth "
+                "trembles beneath their boots.",
+                [("wh3_dlc23_effect_force_stat_armour_chd_melee_chaos_dwarfs", F, [4, 8, 12]),
+                 ("wh3_dlc23_effect_force_stat_melee_defence_chd_melee_chaos_dwarfs", F, [3, 6, 9])]),
+        "2_4": (11, "trait_chaos_dwarfs.png", "Hashut's Iron Will",
+                "Zhorgrath's will is as hard as the iron of Hashut, and his warriors take their nerve from it.",
+                [("wh3_dlc23_effect_force_stat_leadership_chd_melee_chaos_dwarfs", F, [3, 6, 9]),
+                 ("wh_main_effect_character_stat_fire_resistance", C, [5, 10, 15])]),
+        "4_1": (24, "character_damage.png", "No Master's Share",
+                "No master takes a share of Zhorgrath's plunder any more. His hobgoblins get what he "
+                "leaves them, and they know it.",
                 [("wh2_main_effect_force_all_campaign_sacking_income", C, [40]),
                  ("wh_main_effect_force_all_campaign_post_battle_loot_mod", C, [25]),
                  ("wh3_dlc23_effect_force_stat_leadership_chd_hobgoblins", F, [-6])]),
         "4_2": (24, "campaign_military_spending.png", "Charter Trade",
-                "The Captain turns the Company from raiding to trading. The markets pay better than "
+                "Zhorgrath turns the Company from raiding to trading. The markets pay better than "
                 "the villages ever did, and the villages are left alone.",
                 [("wh_main_effect_economy_trade_tariff_mod", "character_to_faction_unseen", [20]),
                  ("wh3_dlc23_pooled_resource_chd_armaments_modifier", "character_to_province_own", [15]),
                  ("wh_main_effect_force_all_campaign_raid_income", F, [-20])]),
-        "3": (29, "character_damage.png", "Captain of the Company",
-              "No one rises to lead the Company by being merciful, or slow.",
+        "3": (29, "character_damage.png", "Ruthless Captain",
+              "No one rises to lead the Uzkul Mingol Company by being merciful, and no one has ever "
+              "accused Zhorgrath of mercy.",
               [("wh_main_effect_character_stat_melee_attack", C, [12]),
                ("wh_main_effect_character_stat_speed", C, [10]),
                ("wh_main_effect_character_stat_unit_health", C, [15])]),
         "lord_trait": (None, None, "The Uzkul Mingol Company",
-                       "Far from Zharr, the Company lives on what it can send home: more convoys on the "
-                       "road, better trade, richer raids. Its hobgoblins are hired along the way; its "
-                       "Chaos Dwarfs are slow to replace.",
+                       "Zhorgrath answers to no master. His iron-clad warriors march at the head of the "
+                       "Company, every captive it takes is put to work, and every city it takes is "
+                       "stripped bare. Its losses are slow to replace.",
                        [("wh2_dlc11_enable_immortal_hidden", C, [1]),
                         ("wh_main_effect_force_all_campaign_post_battle_loot_mod", C, [10]),
                         ("wh_main_effect_force_all_campaign_movement_range", F, [5])]),
@@ -241,18 +265,21 @@ TRAIT_BUNDLE = {
                        ("wh3_dlc23_effect_force_stat_leadership_chd_hobgoblins", "faction_to_force_own", -10),
                        ("wh3_dlc23_effect_upkeep_chd_hobgoblin", "faction_to_force_own_unseen", 25),
                        ("wh3_dlc23_effect_force_recruit_cost_chd_hobgoblins", "faction_to_force_own_unseen", 25)],
-    # No replenishment effect covers Chaos Dwarf units alone, so: -15 for the whole army, +15 back
-    # for hobgoblins (CA's own hobgoblin effect), which leaves the dwarfs, labourers and engines down.
-    "derpy_uzkul": [("wh3_dlc23_effect_technology_chd_convoy_mod_active_convoys", "faction_to_faction_own_unseen", 1),
-                    ("wh_main_effect_economy_trade_tariff_mod", "faction_to_faction_own", 15),
-                    ("wh_main_effect_force_all_campaign_raid_income", "faction_to_force_own", 20),
-                    ("wh_main_effect_force_all_campaign_replenishment_rate", "faction_to_force_own", -15),
-                    ("wh3_dlc23_effect_replenishment_rate_hobgoblins", "faction_to_force_own", 15)],
+    # Zhorgrath's playstyle (the author's pick, 2026-11-18): iron-clad warriors, conquest, captives.
+    # +2 to the Warriors limit is CA's Hell-Forge cap effect, the way Kharkadon's Ironsworn are; the
+    # siege towers are the one effect all three CA Chaos Dwarf lord traits share. Post-battle Labour's
+    # pair and 15 are CA's camp-narrative bundle's. The convoy, raid income and the hobgoblins'
+    # replenishment exception went with the Company's old trade, so the -15 is the whole army's.
+    "derpy_uzkul": [("wh3_dlc23_chd_ritual_unit_cap_chaos_dwarf_warriors", "faction_to_faction_own_unseen", 2),
+                    ("wh3_dlc23_effect_force_chd_campaign_post_battle_labour", "faction_to_force_own", 15),
+                    ("wh2_main_effect_force_all_campaign_sacking_income", "faction_to_force_own", 20),
+                    ("wh3_dlc23_effect_siege_engine_number_chd_siege_tower", "faction_to_force_own", 2),
+                    ("wh_main_effect_force_all_campaign_replenishment_rate", "faction_to_force_own", -15)],
 }
 ITEMS = {
     "derpy_kharkadon": {"weapon": ("Axe of Hashut's Blood", "Hashut's blood was worked into the axe-head. Its edge burns through flesh and plate alike."),
                        "talisman": ("Shield of the Bloodsworn", "Black iron, brass and the oaths of Zharrduk's guard. Kharkadon carries it into the first rank.")},
-    "derpy_uzkul": {"weapon": ("Mingol Cleaver", "A hobgoblin cleaver taken from the last Captain, along with the job."),
+    "derpy_uzkul": {"weapon": ("Mingol Cleaver", "Zhorgrath carried this cleaver in the service of the industrial lords. Now it works for him alone."),
                     "talisman": ("Charter Seal", "The brass seal that makes the Company's plunder lawful in Zharr-Naggrund. Mostly.")},
 }
 ITEM_EFFECTS = {
@@ -275,17 +302,29 @@ ITEM_SET_EFFECTS = {"derpy_kharkadon": [(KP + "armour", F, 10), ("wh_main_effect
 SET_NAME = {"derpy_kharkadon": ("Blood and Iron", "The blood-fed axe and the shield of his sworn guard mark Kharkadon's place at the head of the line."),
             "derpy_uzkul": ("Charter and Cleaver", "One half of the Company's business is the charter. The other half is the cleaver.")}
 PASSIVE = {"derpy_kharkadon": ("Overlord's Presence", "Where the Overlord stands, his Immortals do not give a step."),
-           "derpy_uzkul": ("Captain's Purse", "While the Captain stands, the pay is coming, and the Company holds.")}
+           "derpy_uzkul": ("Where Zhorgrath Marches", "Where Zhorgrath marches, the Company holds its ground.")}
 # A lord listed here borrows a vanilla icon; one not listed ships ui/battle ui/ability_icons/<sub>_passive.png
 PASSIVE_ICON = {"derpy_uzkul": "wh3_dlc23_hero_passive_lucky_git"}
 LORE = {"derpy_kharkadon": ("Kharkadon the Vicious, Overlord of Zharrduk, master of the Immortals.",
                            "The Overlords of Zharrduk are the oldest blood in the Dark Lands, and they do not fight "
                            "with slaves. Kharkadon the Vicious marches with the Immortals of the Infernal Guard and "
                            "a court of seasoned lords, and leaves the chain-gangs to the forges."),
-        "derpy_uzkul": ("Captain of the Uzkul Mingol Company, a chartered expedition hunting gold in Ind.",
-                        "The Uzkul Mingol Company holds a charter from Zharr-Naggrund to find gold, and it has "
-                        "gone as far as Ind to find it. Its Chaos Dwarf overseers drive hobgoblins hired along "
-                        "the way, and its convoys carry the spoils home along the Ivory Road.")}
+        # The long text is the collaborator's, word for word (2026-11-18), as one paragraph the way
+        # CA writes a lord's long description (Zhatan's, Drazhoath's).
+        "derpy_uzkul": ("Zhorgrath the Reaver, Captain of the Uzkul Mingol Company.",
+                        "Among the cruel masters of the Dawi-Zharr, few have earned a reputation as merciless "
+                        "as Zhorgrath the Reaver. Once a ruthless captain in the service of the great "
+                        "industrial lords of Zharr-Naggrund, Zhorgrath grew weary of serving masters who "
+                        "claimed the spoils of his victories. Gathering a host of iron-clad warriors, he "
+                        "marched beneath the banners of the Uzkul Mingol Company, forging his reputation "
+                        "through conquest, enslavement and relentless warfare. Where Zhorgrath marches, the "
+                        "furnaces of Hashut are fed, the enemies of the Dawi-Zharr are crushed, and the earth "
+                        "trembles beneath the iron boots of his warriors. For Zhorgrath, conquest is not "
+                        "merely a duty. It is his birthright.")}
+# Lord select's blurb. CA's is one sentence (Zhatan: "Zhatan marches the Warhost of Zharr into the
+# Eastern Steppes intent on ..."), and so are the other houses'; a lord not listed shows LORE's long text.
+FRONTEND_LINE = {"derpy_uzkul": "Zhorgrath the Reaver marches the Uzkul Mingol Company to war, intent on "
+                                "keeping every spoil his old masters once claimed."}
 UNIT_ICON_SET = {"derpy_kharkadon": "wh3_dlc23_chd_labourers", "derpy_uzkul": "wh3_dlc23_chd_hobgoblins"}
 
 # ------------------------------------------------------------------------------------------ io
@@ -755,14 +794,16 @@ def loc_text():
         LOC["unit_description_short_texts_text_%s_description" % s] = LORE[s][0]
         LOC["unit_description_historical_texts_text_%s_description" % s] = LORE[s][1]
         if L["name_id"]:
-            LOC["names_name_" + L["name_id"]] = L["name"]
+            LOC["names_name_" + L["name_id"]] = L.get("forename", L["name"])
+        if L.get("surname_id"):
+            LOC["names_name_" + L["surname_id"]] = L["surname"]
         for k in ("onscreen_name", "colour_text", "explanation_text", "removal_text"):
             LOC["character_trait_levels_%s_%s_defeat_lord_trait" % (k, s)] = "PLACEHOLDER"
         f = L["fslug"]
         LOC["rituals_display_name_derpy_ritual_chd_toz_annex_" + f] = "Confederate with the " + L["house"]
         LOC["rituals_description_derpy_ritual_chd_toz_annex_" + f] = "Bring the %s to heel beneath your own." % L["house"]
         for p in L["frontend"]:
-            LOC["frontend_faction_leaders_frontend_description_" + p] = LORE[s][1]
+            LOC["frontend_faction_leaders_frontend_description_" + p] = FRONTEND_LINE.get(s, LORE[s][1])
             for k in ("localised_description", "localised_action_points", "loading_screen_text"):
                 LOC.setdefault("frontend_faction_leaders_%s_%s" % (k, p), "")
 
@@ -774,12 +815,20 @@ def loc_fix(row):
     return "\t".join(c)
 
 
+def name_row(i, kind):
+    """A minted names_tables row; frequency 0 so random generation never picks it (CA's own
+    Kharkadon rows are the same)."""
+    return "\t".join([i, "names_chd_chaos_dwarfs", kind, "m", "0"])
+
+
 def add_names(files):
     rel = os.path.join("db", "names_tables", "!!derpy_chd_legendary_lords.tsv")
     hdr, meta, rows = read_tsv(os.path.join(EX, rel))
-    ids = {L["name_id"] for L in LORDS if L["name_id"]}
+    fore = {L["name_id"] for L in LORDS if L["name_id"]}
+    sur = {L["surname_id"] for L in LORDS if L.get("surname_id")}
+    ids = fore | sur
     rows = [r for r in rows if r.split("\t")[0] not in ids | RETIRED_NAME_IDS]
-    rows += ["\t".join([i, "names_chd_chaos_dwarfs", "forename", "m", "0"]) for i in sorted(ids)]
+    rows += [name_row(i, "forename") for i in sorted(fore)] + [name_row(i, "family_name") for i in sorted(sur)]
     files[rel] = (hdr, meta, rows, "names_tables")
     rel = os.path.join("text", "derpy_chd_ll_names.loc.tsv")
     hdr, meta, rows, _t = files.get(rel) or (*read_tsv(os.path.join(EX, rel)), None)
@@ -955,8 +1004,8 @@ def check_own_models(lords=None):
     """A lord with his own `mesh` / `anim` names files only the assets pack ships: the
     variantmeshdefinition, and animations/database/battle/bin/<anim>.bin inside one of its
     .animpacks. A missing one is a silent T-pose or invisible lord, not an error."""
-    import lz4.frame
     import read_animpack as ra
+    from gen_zhorgrath_model import unpack      # LZ4 or zstd: an RPFM re-save turned LZ4 into zstd (2026-11-18)
     from read_pack_index import paths, read
     lords = LORDS if lords is None else lords
     have = {p.lower() for p in paths(ASSETS)}
@@ -964,7 +1013,7 @@ def check_own_models(lords=None):
     for p in (p for p in have if p.endswith(".animpack")):
         _p, comp, d = read(ASSETS, p)[0]
         if comp:
-            d = lz4.frame.decompress(d[4:])
+            d = unpack(d)
         bins.update(i[0].lower() for i in ra.read_animpack(d))
     bad = []
     for L in lords:
@@ -1187,12 +1236,13 @@ def check_ids_unique():
             if t == table:
                 hdr, _m, rows = read_tsv(os.path.join(EX, rel))
                 # names rows carry no owned key, so recognise the exact row add_names() writes
-                ours = {"\t".join([L["name_id"], "names_chd_chaos_dwarfs", "forename", "m", "0"]) for L in LORDS
-                        if L["name_id"]}
+                ours = {name_row(L["name_id"], "forename") for L in LORDS if L["name_id"]} | \
+                       {name_row(L["surname_id"], "family_name") for L in LORDS if L.get("surname_id")}
                 used.update(get_col(r, hdr, col) for r in rows if not OWNED.search(r) and r not in ours)
         for L in LORDS:
-            if L[attr] in used:
-                bad.append("%s %s already used in %s" % (attr, L[attr], table))
+            for a in (attr, "surname_id") if attr == "name_id" else (attr,):
+                if L.get(a) and L[a] in used:
+                    bad.append("%s %s already used in %s" % (a, L[a], table))
     return bad
 
 
@@ -1365,6 +1415,51 @@ def check_frontend_army(front=None):
     return bad
 
 
+OW_PACK = r"F:\SteamLibrary\steamapps\workshop\content\1142710\3081800026\!cr_oldworld_campaign.pack"
+AK_DB = os.path.join(os.path.dirname(GAME), "assembly_kit", "raw_data", "db")
+
+
+@lru_cache(None)
+def startpos_leaders():
+    """{startpos character id: faction key} for every lord-select card our houses can have: the Old World's
+    and IEE's own tables (their frontend scripts key Mixer's lists by it), and CA's Immortal Empires faction
+    leaders from the Assembly Kit, which IEE's startpos keeps for CA's factions (its Conclave card is
+    1411046267). A start_pos_factions ID looks the same and is NOT one - 835127146 shipped as Ghorth's."""
+    from read_pack_index import read
+
+    def ak(name, tag):
+        t = open(os.path.join(AK_DB, name), encoding="utf-8", errors="replace").read()
+        return [dict(re.findall(r"<(\w+)>([^<]*)</\1>", r)) for r in re.findall(r"<%s [^>]*>(.*?)</%s>" % (tag, tag), t, re.S)]
+    fac = {f["ID"]: f["faction"] for f in ak("start_pos_factions.xml", "start_pos_factions")
+           if f["campaign"] == "wh3_main_combi"}
+    ids = {c["ID"]: fac[c["faction"]] for c in ak("start_pos_characters.xml", "start_pos_characters")
+           if c.get("ministerial_position") == "faction_leader" and c.get("faction") in fac}
+    for pack in (IEE_PACK, OW_PACK):
+        for _p, comp, data in read(pack, "script/frontend/"):
+            assert comp == 0, _p
+            ids.update(re.findall(r'\["(\d+)"\]\s*=\s*"(\w+)"', data.decode("utf-8", "replace")))
+    return ids
+
+
+def check_frontend_names(front=None):
+    """Every lord-select card of a house we lead names our lord: mixer_change_lord_name for each of its
+    faction's startpos leader ids, and no id that is not one (it would silently never apply)."""
+    if front is None:
+        front = open(os.path.join(ROOT, "Modding Files", "pack", *SCRIPTS[3].split("/")), encoding="utf-8").read()
+    annex = open(os.path.join(ROOT, "Modding Files", "pack", *SCRIPTS[-1].split("/")), encoding="utf-8").read()
+    house = {s: f for f, s in re.findall(r'faction = "(\w+)",\s*subtype = "(\w+)"', annex)}
+    house["derpy_ghorth"] = "wh3_dlc23_chd_conclave"     # a CA faction, not a Tower seat
+    assert len(house) >= 13, house
+    ids = startpos_leaders()
+    reg = re.findall(r'mixer_change_lord_name\("(\d+)", "(\w+)"\)', front)
+    bad = ["frontend name: %s is %s's card, not %s's (%s)" % (i, ids.get(i, "nobody"), house.get(u), u)
+           for i, u in reg if ids.get(i) != house.get(u)]
+    have = set(reg)
+    bad += ["frontend name: %s's card %s shows the startpos leader" % (f, i)
+            for u, f in sorted(house.items()) for i in sorted(k for k, v in ids.items() if v == f) if (i, u) not in have]
+    return bad
+
+
 def check_start_script():
     """Run the shipped start script under Lua 5.1.5 against a stubbed campaign. Five cases."""
     import subprocess
@@ -1392,9 +1487,10 @@ def check_start_script():
     if [l for l in out_u if l.startswith("HERO")] != [
             "HERO\tcr_chd_skullstack\twizard\twh3_dlc23_chd_daemonsmith_sorcerer_metal\t101\tnil"]:
         bad.append("uzkul: no Daemonsmith hero beside the new lord: %r" % out_u)
-    sp_u = [l for l in out_u if l.startswith("SPAWN\tcr_chd_skullstack\tderpy_uzkul\tnames_name_12412536\t\t")]
+    sp_u = [l for l in out_u if l.startswith("SPAWN\tcr_chd_skullstack\tderpy_uzkul\tnames_name_12412536"
+                                             "\tnames_name_12412538\t")]
     if len(sp_u) != 1:
-        bad.append("uzkul: the Captain was not spawned: %r" % out_u)
+        bad.append("uzkul: Zhorgrath the Reaver was not spawned: %r" % out_u)
     for l in sp_u:
         bad += check_army(l.split("\t")[2], l.split("\t")[5].split(","))
     if "KILL\t7\ttrue" not in out:
@@ -1599,6 +1695,11 @@ def selftest():
         "a faction with no frontend army list passed"
     assert check_frontend_army(front.replace('"wh3_dlc23_chd_cav_bull_centaurs_axe"})', '})')), \
         "a frontend list missing a unit passed"
+    assert not check_frontend_names(), check_frontend_names()
+    assert len(check_frontend_names(front.replace('"1411046267", "derpy_ghorth"', '"835127146", "derpy_ghorth"'))) == 2, \
+        "a start_pos_factions ID registered as a card passed"
+    assert len(check_frontend_names(front.replace('mixer_change_lord_name("973581693", "derpy_uzkul");', ''))) == 1, \
+        "a card left showing the startpos leader passed"
     models = frontend_model(LORDS[0])
     assert not check_frontend_models(models), check_frontend_models(models)
     tw = next(p for p in models if p.endswith("3d_model.twui.xml"))
@@ -1857,6 +1958,13 @@ def write_all(files):
             src = os.path.join(tsb.OUT, n)
             assert os.path.exists(src), "run tools/make_toz_seat_banner.py first: " + src
             loose.append((src, tsb.TOZ + n))
+    # the Uzkul Mingol Company's flag (2026-11-18, a collaborator's design redrawn on CA's frame by
+    # tools/make_skullstack_flag.py --write). Same path as IEE's six files: this pack loads first, so ours win
+    import make_skullstack_flag as msf
+    for n in msf.NAMES:
+        src = os.path.join(msf.STAGED, n)
+        assert os.path.exists(src), "run tools/make_skullstack_flag.py --write first: " + src
+        loose.append((src, "ui/flags/%s/%s" % (msf.IEE_FLAG, n)))
     icons = [L["sub"] + "_passive" for L in LORDS if L["sub"] not in PASSIVE_ICON]
     icons += ["derpy_kharkadon_" + suffix for suffix in ITEM_ABILITIES]
     for icon in icons:
@@ -1935,7 +2043,7 @@ def main():
         return
     files = build()
     bad = check(files) + check_ids_unique() + check_faction_refs(files) + check_start_script() + check_annex_lua() + \
-        check_frontend_army() + check_frontend_models() + check_own_models()
+        check_frontend_army() + check_frontend_names() + check_frontend_models() + check_own_models()
     for b in bad:
         print("FAIL  " + b)
     if bad:

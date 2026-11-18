@@ -42,7 +42,9 @@ wh3 MCP bridge tools were not loaded in this session, so no in-game check was po
 - **What the build chose beyond the spec's first draft**: one officer entity and personality per
   option (so each option's officer total is exactly 3104 if the clone's bonus stacks); the clone's
   attribute group is the base's attributes plus his `encourages`; the clone's unit sets are his two
-  plus the base's minus `mp_cap_*` and `wh2_main_ror_units_all`; his abilities carry over minus the
+  plus the base's minus `mp_cap_*` and `wh2_main_ror_units_all` (**changed 2026-11-18: his two only** - the
+  base's sets put him in every infantry set, so infantry buffs listed him;
+  `PATCH_NOTES_20261118_BLACK_DWARF_TONE_DOWN.md`); his abilities carry over minus the
   single-entity passive; no `cdir_military_generator_unit_qualities` row.
 
 ### Corrections found the hard way (build)

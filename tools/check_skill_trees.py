@@ -5,7 +5,7 @@ of RPFM's dependency database, then checks the things RPFM diagnostics do not:
 dangling references, grid collisions, unreachable nodes, duplicate skills inside
 one tree, and the per-lord omissions that only show up by comparing lords.
 
-Needs RPFM open (the MCP server at 127.0.0.1:45127 only exists while it runs).
+Needs rpfm_server, which tools/rpfm_client.py starts headless if RPFM is closed.
 
     py tools/check_skill_trees.py [path\\to\\pack]
 
