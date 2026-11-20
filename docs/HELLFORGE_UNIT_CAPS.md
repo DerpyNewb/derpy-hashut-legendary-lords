@@ -314,7 +314,12 @@ See `MEMORY`/`workshop-is-the-live-copy`.
   both contain `db/<table>/derpy_chd_tanks`. Identical in-pack paths are a whole-file override,
   not a row merge, and `derpy_chd_units` sorts later, so it wins outright. (2026-09-25: the Dawi
   Gunpowder crash reports point the other way, the name that sorts FIRST winning, and this pair is
-  one of four; see `sessions/WORKSHOP_BUG_REPORTS_20260925.md` §1.) Shadowed:
+  one of four; see `sessions/WORKSHOP_BUG_REPORTS_20260925.md` §1. Measured 2026-11-18: the pack
+  listed FIRST in the mod list keeps the file, and the Mod Manager lists alphabetically by
+  default, so `derpy_chd_tank`'s files win and `derpy_chd_units` loses its whole
+  `derpy_chd_tanks` file in each shared table. In `effect_bonus_value_ritual_junctions` that is
+  41 rows lost against the tank pack's 5 (read 2026-11-18). The list below was worked out the
+  other way round. `MOD_STRUCTURE.md`, "Which copy of a DB row wins".) Shadowed:
 
   ```
   effect_bundles_to_effects_junctions   monsters_..._toz <- turtle_tank_cap_cost_mod   (dropped)

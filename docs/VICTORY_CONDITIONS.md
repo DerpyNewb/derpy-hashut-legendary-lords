@@ -162,9 +162,16 @@ one of them via `campaigns_tables.script_path`.
 ovn_araby.pack        ovn_grudgebringers.pack                     nag_nagash.pack
 ```
 
-Duplicate primary key, last pack loaded wins, so with those installed the Old World campaign
-runs `main_warhammer` and declares `victory_objectives_ie` after all. Hard-coding either name
-is a guess about the player's mod list — **probe for the table instead**.
+~~Duplicate primary key, last pack loaded wins, so with those installed the Old World campaign
+runs `main_warhammer` and declares `victory_objectives_ie` after all.~~ Corrected 2026-11-18:
+the last pack does not win. The row in the table file whose name sorts first does, whatever
+pack holds it (measured in game, `MOD_STRUCTURE.md`, "Which copy of a DB row wins"). Every one
+of these rows read on 2026-11-18 sits in a `zzz_` file (`zzz_rhox_lccp`, `zzz_rhox_mar`,
+`zzz_hkrul_emp_sec`, `zzz_ovn_fimir`), and the Old World mod's own row, in
+`cr_oldworld_campaign`, sorts first and keeps `script/campaign/cr_oldworld`. The four packs
+in the list above that weren't found installed were not checked. A pack that ships its row in a
+file sorting before `cr_oldworld_campaign` would still flip it, so hard-coding either name is
+still a guess about the player's mod list. **Probe for the table instead**.
 
 Note also: `cr_darklands` is referenced by Cataph's `campaignselect.cco` and by a
 `CND_CAMPAIGN` condition, but **no installed pack ships a `campaigns_tables` row for it**, so
