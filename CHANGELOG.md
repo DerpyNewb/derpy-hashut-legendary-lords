@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-23
+
+- New `gen_zhorgrath_model.py`: Zhorgrath's model, traced out of the collaborator's Workshop packs into the asset pack under a `norscanwarlord_` name. `gen_new_house_lords.py` imports it, so it was missing from this repo until now. The Zhorgrath handoff joins `docs/history/`.
+- Docs refreshed against the 9.0.5 game data and the current packs. The Tower of Zharr doc now covers the Completed-only claim listener, three districts as the tested ceiling and twelve annex seats. The victory doc gives 13 houses, the missions doc drops the Drazhoath quest character the final battles no longer carry, and the Hell-Forge doc records that no modded category ships.
+
 ## 2026-11-18
 
 - `gen_kharkadon_bodyguards.py`: a bodyguard option now joins only Kharkadon's own two unit sets. It used to inherit its base unit's sets as well, which put him in every Chaos Dwarf infantry set, so infantry buffs listed him and CA's infantry techs applied to him. `check()` fails on any other set, and the selftest gained two breaks.

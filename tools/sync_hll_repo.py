@@ -37,6 +37,7 @@ TOOLS = [
     # the two lords added 2026-10-03, Zochaz, and what was built on them
     "gen_new_house_lords.py", "gen_new_lords_cb.py", "gen_kharkadon_bodyguards.py",
     "gen_zochaz.py", "gen_portrait_settings.py", "gen_character_portrait.py",
+    "gen_zhorgrath_model.py",
     "make_toz_seat_banner.py", "make_skullstack_flag.py",
     # the naval horde (Abnagg and Tordrek) and Tordrek's Vampire Coast skills
     "gen_naval_horde_units.py", "gen_naval_horde_phase6.py", "gen_naval_horde_admiral.py",
@@ -81,6 +82,7 @@ HISTORY = [
     "HANDOFF_20261006_KHARKADON_TEXTURE_SRGB_AND_PORTRAITS.md",
     "HANDOFF_20261007_KHARKADON_SELF_EFFECT_TEXT.md",
     "HANDOFF_20261007_KHARKADON_VICTORY_ROUTES.md", "HANDOFF_20261010_HLL_ELECTOR_SEATS_SCOPE.md",
+    "HANDOFF_20261118_ZHORGRATH.md",
     "GHORTH_MISSION_OPTIONS_20260903.md", "HOUSE_MISSION_OPTIONS_20260903.md",
     "SKILL_TREE_AUDIT_20260821.md", "VICTORY_ROUTE_TEXT_REVIEW_20261011.md",
 ]

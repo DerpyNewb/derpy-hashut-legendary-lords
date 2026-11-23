@@ -19,7 +19,7 @@ shipped.
 
 This repository holds the tools only, not the mod. The mod is the `.pack` on the Workshop.
 
-- `tools/`: 38 Python tools (about 17,000 lines) and two Lua test harnesses.
+- `tools/`: 41 Python tools (about 19,000 lines) and two Lua test harnesses.
 - `docs/`: four reference docs (victory conditions, missions, the Tower of Zharr's seats,
   Hell-Forge unit caps).
 - `docs/design/` and `docs/plans/`: the specs and plans for the victory routes and Kharkadon.

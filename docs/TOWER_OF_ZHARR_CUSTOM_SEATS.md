@@ -7,7 +7,8 @@ Written 2026-08-17, **feature confirmed working in game 2026-08-18**, on three p
 lords and their factions in IEE: seats claim, districts complete and pay out, each seat
 delivers its legendary lord, and a house holds its own seat from turn one. **Panel art settled
 2026-08-19** — lava beams removed, per-seat name labels added, and the bull-head crest raised
-clear of the seats (§5). Current build SHA256 `D59B4C50…`, 14,572,712 bytes.
+clear of the seats (§5). That day's build was SHA256 `D59B4C50…`, 14,572,712 bytes; the pack
+has been rebuilt many times since.
 
 **If you only read one thing:** four separate causes kept the seats from claiming, and every
 one of them failed *silently* with all visible state reading healthy. They are §2 (two junction
@@ -70,14 +71,15 @@ $ diff vanilla/tower_of_zharr.twui.xml  shipped/tower_of_zharr.twui.xml   # befo
 >     vertical_alignment="Top"/>
 ```
 
-Today it carries eleven hunks, 81 lines against 11,814 (re-measured 2026-08-19). Everything in it is cosmetic or additive;
-nothing in it is load-bearing.
+Today it carries eleven hunks, 81 lines against 11,814 (re-measured 2026-08-19). Edit 5 added two
+more on 2026-08-30, so it is thirteen hunks now (re-counted 2026-11-23 against CA's current file,
+which 9.0 left unchanged). Everything in it is cosmetic or additive; nothing in it is load-bearing.
 
 **The cost.** The copy is pinned to the patch it was extracted from. Nothing else overrides
 this file today — a scan of every subscribed Workshop pack found exactly one hit, this one — so
 there is no live conflict, but any CA change to the panel is silently reverted, and any future
 mod that touches it collides. **After each game patch, re-diff vanilla against the shipped copy
-and re-apply the five hunks** rather than assuming it still matches.
+and re-apply the thirteen hunks** rather than assuming it still matches.
 
 **The override-free route**, if it ever becomes worth it: hide the lava with
 `find_uicomponent` + `SetVisible(false)` on panel open, and ship the seat label as its own
@@ -93,8 +95,11 @@ with `grep -c $'
 
 ### The edits themselves
 
-The pack ships an override of `ui/campaign ui/tower_of_zharr.twui.xml`. Five edits so far,
-eleven diff hunks:
+The pack ships an override of `ui/campaign ui/tower_of_zharr.twui.xml`. Five edits are written up
+below, and the file differs from CA's in thirteen diff hunks (re-counted 2026-11-23). The four
+hunks the list does not cover are the tier-number label (`text="5"`, and `SortOrder +
+GetIfElse(Key == "toz_tier_5", 0, 1)`) and the tower background image's `offset` and `height`
+(`-155,-2057` to `-155,-2763`, and `3778` to `4484`).
 
 1. **Header alignment.** `district_list`'s LayoutEngine ships `vertical_alignment="Center"`,
    so districts with different seat counts have their headers at different heights. Setting
@@ -216,7 +221,7 @@ Do not go looking for one. Checked across all five UI packs:
 - Shrinking districts to fit 5 needs 296px each, against a `district_title` image of 288px
   flagged `canresizewidth="false"` — 8px of slack and no headroom for a 6th.
 
-If you ever genuinely need more than 16 seats, add a **tier row** (one
+If you ever genuinely need more than 12 seats, add a **tier row** (one
 `ritual_category_groups` row): the tier list already scrolls vertically and that machinery
 works today.
 
@@ -247,7 +252,8 @@ their `_usurp_cost_modifier_hidden` records — see "CA prices annex seats too" 
 Re-read off the Workshop pack 2026-10-09 at twelve seats; the thirteenth file, `effect_bonus_value_faction_junctions` (13 rows), is the usurp
 penalty's faction binding from §11.
 
-Plus `text/derpy_chd_toz_annex.loc` (181 rows) and `db/incidents_tables/derpy_chd_toz_factions`.
+Plus `text/derpy_chd_toz_annex.loc` (221 entries in the Workshop pack, read 2026-11-23) and
+`db/incidents_tables/derpy_chd_toz_factions`.
 
 ### Two tables get missed, and both fail silently
 
@@ -265,7 +271,8 @@ The tier 1-3 district seats carry a third row pointing at a per-seat
 `..._usurp_cost_modifier_hidden` effect with its own `effects_tables` entry. The tier-4 lord
 seats do not, so custom lord seats need only the two above.
 
-**How to find tables like this:** extract all 1,520 vanilla tables from `data/db.pack` as TSV
+**How to find tables like this:** extract all the vanilla tables from `data/db.pack` (1,604 on
+2026-11-23) as TSV
 and `grep -rl` a known-good key. Everything a working seat is in, yours must be in too:
 
 ```
@@ -289,8 +296,8 @@ wh3_dlc23_chd_ritual_toz   derpy_ritual_chd_toz_annex_khorakk                  0
 
 This is exactly the failure mode `CLAUDE.md` warns about — tracing vanilla rows in RPFM
 shows which tables are *wired up*, never which are *missing*. The reliable way to find the
-full set: extract `data/db.pack` (1,521 tables) and grep a known-good vanilla key across all
-of them.
+full set: extract `data/db.pack` (1,604 tables on 2026-11-23) and grep a known-good vanilla key
+across all of them.
 
 ### A seat's price is not fixed — and varying it takes three tables
 
@@ -308,7 +315,7 @@ Vanilla seat costs, in conclave influence, one `resource_cost` row per tier:
 | 4 | `wh3_dlc23_chd_ritual_toz_tier4` | −600 |
 | 5 (ours) | `derpy_chd_ritual_toz_tier5` | −300 |
 
-**Every ritual pointing at one `resource_cost` key shares one price.** All ten annex seats
+**Every ritual pointing at one `resource_cost` key shares one price.** All twelve annex seats
 point at `derpy_chd_ritual_toz_tier5`, so nothing in DB alone can price them differently.
 
 CA's answer is a hidden per-seat effect driven from script, the `usurp_cost_modifier` pattern.
@@ -355,7 +362,7 @@ if seat.district_group_key ~= "TOZ_TIER_4" then
 ```
 
 `zz_derpy_toz_annex.lua` registers the annex seats with `district_group_key` =
-`DISTRICTS_ANNEX_T5_A/B/C`, so **all ten take that branch** — the tier-4 exemption does not
+`DISTRICTS_ANNEX_T5_A/B/C`, so **all twelve take that branch** — the tier-4 exemption does not
 cover them, and "lord seats need only the two cost rows" is true of the DB pricing rows but
 not of this runtime call. With no `effect_bundles` record the call returns nil and
 `add_effect` kills the rest of CA's callback: the 5-turn `lock_ritual` on rivals, the
@@ -416,8 +423,10 @@ completes the small districts or pays the big ones out early.
 swapping the tier value around the inner call and restoring it after. Districts without one
 (every vanilla district) take the original path untouched, and the wrap is guarded on
 `type(base_check) == "function"` plus a session-local flag — deliberately not a flag on
-`tower_of_zharr`, which is rebuilt from the save on load. That is what lets the current 3/3/2/2
-layout work, and it is the piece to keep if the districts are ever re-cut.
+`tower_of_zharr`, which is rebuilt from the save on load. That is what let the earlier uneven
+layouts (3/3/2/2, then 4/3/3) work. The districts have been an even 4/4/4 since 2026-10-03, and
+the wrap still matters: a lord switched off in MCT lowers his district's own `total_seats`
+(below). Keep it if the districts are ever re-cut.
 
 **Unlocking** — `cm:unlock_rituals_in_category(faction, category, -1)` (what CA's
 `tier_unlocked_check` uses) plus `cm:unlock_ritual(faction, key)` per seat. Neither helps if
@@ -484,12 +493,19 @@ local faction (CA's own idiom from `wh2_dlc15_eltharion_lair.lua:400`: top up th
 resource, then `cm:perform_ritual` in a `cm:callback` with delay 1). Hiding it instead would
 strand its district one seat short forever, since the AI never claims annex seats.
 
-**Claim handler — listen on BOTH `RitualStartedEvent` and `RitualCompletedEvent`.** CA's own
+**Claim handler — listen on `RitualCompletedEvent` only.** CA's own
 Tower script claims seats on Started, and that is what the first version copied. Proven wrong
 by an unfiltered probe on 2026-08-18: **the engine raises only `RitualCompletedEvent` for
 these rituals**, never Started, so no Lua listener — ours or CA's — ever heard about a
-tier-5 claim, even while the seats visibly claimed and their districts read complete. Dedupe
-by ritual key so whichever event arrives first wins.
+tier-5 claim, even while the seats visibly claimed and their districts read complete.
+
+Until 2026-11-02 a Started listener was kept as well, deduped by ritual key, and it crashed the
+game. Claiming a tier-four seat runs CA's `confederation_handler` inside CA's own Started
+listener, which performs a ritual for every seat the absorbed house held. Ours then ran on the
+same context and read `context:ritual()`, an interface already freed: a native crash that
+`pcall` cannot catch (`sessions/WORKSHOP_REPORTS_20261102_HLL.md`). All four copies now listen on
+Completed only, and `gen_new_house_lords.check_annex_lua()` fails on any `"RitualStartedEvent"`
+in the file.
 
 CA documents **five** ritual events and `RitualCompletedEvent` carries a `succeeded` field the
 handler does not read — see §9.2.
@@ -938,7 +954,7 @@ is real, on `FACTION_RITUALS_SCRIPT_INTERFACE`. `RitualContext.DisplayName` is r
 |---|---|---|
 | 1 | "Affordability is invisible to both flags" (§6.2) | **Wrong.** `cannot_afford_resource_cost()` sits on the same `RITUAL_STATUS_SCRIPT_INTERFACE`. Corrected in §6.2. |
 | 2 | Two status flags, `disabled` and `script_locked` | **Nineteen**, and CA notes the result "is a bit mask and needs to be checked accordingly". `available()` is the summary the probe never used. Listed in §6.2. |
-| 3 | "Listen on BOTH `RitualStartedEvent` and `RitualCompletedEvent`" (§4) | Correct as far as it goes, but there are **five** ritual events — `RitualEvent`, `RitualStartedEvent`, `RitualCompletedEvent`, `RitualCancelledEvent`, `RitualsCompletedAndDelayedEvent`. See 9.2. |
+| 3 | "Listen on BOTH `RitualStartedEvent` and `RitualCompletedEvent`" (§4) | Correct as far as it goes, but there are **five** ritual events — `RitualEvent`, `RitualStartedEvent`, `RitualCompletedEvent`, `RitualCancelledEvent`, `RitualsCompletedAndDelayedEvent`. See 9.2. (Superseded 2026-11-02: the Started listener crashed the game and was removed, §4.) |
 | 4 | "No locking call" (§4) | `cm:lock_rituals_in_category(faction, category)` is the documented inverse of the unlock, and is not used anywhere. The pre-claim re-lock instead calls per-ritual `cm:lock_ritual` five times. |
 
 ### 9.2 `RitualCompletedEvent` carries `succeeded`, and the handler ignores it
@@ -953,9 +969,9 @@ RitualCompletedEvent
     ritual                 ACTIVE_RITUAL_SCRIPT_INTERFACE
 ```
 
-`zz_derpy_toz_annex.lua:727` registers `on_annex_claimed` for both ritual events with the
-condition `true` (correct — see §4 on conditions that throw) and the body never reads
-`succeeded`. A ritual that completes **unsuccessfully** therefore annexes the house anyway.
+`zz_derpy_toz_annex.lua` registers `on_annex_claimed` with the condition `true` (correct — see
+§4 on conditions that throw), on both ritual events when this was written and on
+`RitualCompletedEvent` alone since 2026-11-02 (§4), and the body never reads `succeeded`. A ritual that completes **unsuccessfully** therefore annexes the house anyway.
 No such case has been observed, and it may not be reachable for these rituals, but the check
 costs one `pcall`ed field read and is the difference between "not observed" and "cannot happen".
 
@@ -991,8 +1007,8 @@ db/campaign_group_members_tables/derpy_chd_toz_ai                    13 rows, §
 db/campaign_group_member_criteria_factions_tables/derpy_chd_toz_ai   13 rows, §11
 db/incidents_tables/derpy_chd_toz_factions      3 per tower faction (seat_claimed / usurping / usurped_by)
 db/effect_bonus_value_faction_junctions_tables/derpy_chd_toz_annex   13 rows, §11
-text/derpy_chd_toz_annex.loc          189 rows
-ui/campaign ui/tower_of_zharr.twui.xml   CA's panel, 3 edits / 5 hunks — NOT required (§5)
+text/derpy_chd_toz_annex.loc          221 entries (2026-11-23)
+ui/campaign ui/tower_of_zharr.twui.xml   CA's panel, 13 hunks — NOT required (§1)
 script/campaign/<campaign>/mod/
     zz_derpy_toz_annex.lua            registration, gating, unlock, claim handler, lord grant,
                                       per-seat strength pricing
@@ -1021,14 +1037,16 @@ drifts from the list, and `gen_victory_routes.py` reads its annex groups out of 
 > which is how the ten per-seat pricing rows would have vanished at the next district edit, with
 > no error and no symptom beyond seats quietly reverting to a flat price. The script now emits
 > them (30 rows: two cost effects plus one strength modifier per seat, verified 2026-08-20).
+> Since the `_usurp_cost_modifier_hidden` rows went in it is four rows per seat, 48 at twelve
+> seats (§2).
 > `effect_bundles` is add-only and `effects_tables` is not touched at all, so their pricing rows
 > survive — meaning a new seat needs those two added by hand.
 >
 > It also needs a `templates/cur/` directory holding the current tables exported as TSV; it
 > reads from there, not from the pack.
 
-Reference material for further work: CA's scripts are in `data/data_script.pack` (5,787 files),
-all 1,520 vanilla DB tables in `data/db.pack`, the panel in `ui3.pack`. All mod-side logging
+Reference material for further work: CA's scripts are in `data/data_script.pack` (7,548 files on
+2026-11-23), all 1,604 vanilla DB tables in `data/db.pack`, the panel in `ui3.pack`. All mod-side logging
 greps with a single token: `XXX derpy`.
 
 ---
@@ -1064,7 +1082,7 @@ castable ritual, just a dearer one.
 is tempting to read that as an allowlist of what the AI may cast — which would mean panel
 mechanics are AI-invisible. **It is not an allowlist.** It overrides cast cadence for that one
 category (5–11 rounds against the 5–25 default in `cai_ritual_variables`); STANDARD_RITUAL holds
-the 50 WH2-era race rituals and nothing else. The AI casting ToZ seats was reported from a live
+52 race rituals (48 of them WH2-era, counted 2026-11-23) and nothing else. The AI casting ToZ seats was reported from a live
 campaign while this file's author was arguing from that table that it could not happen.
 
 `ToZ_ai_boost` (CA's script, `:596`) is **culture**-gated, not membership-gated: every non-human
@@ -1202,5 +1220,6 @@ dial to turn, not the predicate. Since 2026-10-03 the dial is the MCT setting
 
 Tiers 3–4 for the modded houses. Tier 2 was settled 2026-08-20, when modded houses usurped four
 tier-two seats; CA's `tier_unlocked_check` runs `unlock_rituals_in_category` over
-`tower_of_zharr.factions`, which holds all fourteen, so 3–4 should follow the same way. Also still
+`tower_of_zharr.factions`, which holds every tower faction (sixteen in the cr_ campaigns since
+2026-10-03), so 3–4 should follow the same way. Also still
 untested: unaided engine claiming over a long run with no debug script attached.

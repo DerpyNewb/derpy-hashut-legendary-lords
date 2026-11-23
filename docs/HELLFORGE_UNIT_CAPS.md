@@ -2,7 +2,9 @@
 
 Written 2026-08-20. Everything here is read from CA's shipped script
 (`script/campaign/wh3_dlc23_campaign_chd_hellforge.lua`, 573 lines, in `data/data_script.pack`)
-and from the packs themselves. **Nothing in this file has been tested in a running campaign.**
+and from the packs themselves. **When it was written, nothing in this file had been tested in a
+running campaign.** §3, §6, §9 and §10 have since added in-game measurements, each dated where it
+appears.
 
 The Chaos Dwarf Hell-Forge panel sells *unit allowance* — "+1 to how many Hellcannons you may
 field" — for Armaments. Two things are supposed to happen on each purchase: the cap goes up,
@@ -558,9 +560,10 @@ Keep descriptions single-line.
 ### The audit that finds this in one pass
 
 There is **no engine-side DB log** — the game writes only Lua `script_log_*.txt`. So do not try to
-debug a data mechanic by adding tables until it works. Extract all 1,520 vanilla tables once
-(`extract_packed_files` on `data/db.pack`, `export_as_tsv: true`, ~1.4 s) and grep every key in
-the chain for the table set that mentions it:
+debug a data mechanic by adding tables until it works. Extract all the vanilla tables once (1,604
+on 2026-11-23; RPFM 5.3's `extract_files` from `game_files` with `as_tsv: true`, which was
+`extract_packed_files` with `export_as_tsv: true` before 5.3, ~1.4 s) and grep every key in the
+chain for the table set that mentions it:
 
 ```bash
 for k in DLC23_CATEGORY_WARMAHINES_INITIATIVES          wh3_dlc23_faction_initiative_set_chd_category_warmachines          wh3_dlc23_faction_initiative_chd_category_warmachines_1          wh3_dlc23_chd_hellforge_warmachine_unlocker          wh3_dlc23_chd_hellforge_unit_cap_unlocker_warmachine          wh3_dlc23_chd_hellforge_unit_cap_required_warmachine_t1          wh3_dlc23_chd_hellforge_unit_cap_increase_warmachine_1          wh3_dlc23_chd_category_warmachines
@@ -631,11 +634,14 @@ One trap copied from CA by accident: their contact-immunity effect's `icon_negat
 |---|---|---|---|
 | `derpy_chd_units` | `DLC23_CATEGORY_ZHARRGRON_INITIATIVES` "Zharrgron Engines" | `derpy_chd_art_trains` + `derpy_chd_turtle_tank` (16 units) | 14 |
 
-**Exactly one modded category ships — see §10 for why.**
+**Exactly one modded category shipped — see §10 for why. None ships now:** on 2026-11-23 no
+derpy Workshop pack carries `initiative_set_categories` or `initiative_sets`.
 
 **Stale (read 2026-11-02):** the Workshop `derpy_chd_units` ships no `initiative_*` tables at all, so
 this category is gone and its tanks and trains take CA's War Machines upgrades. Its cap category
-`HELLFORGE_CAPS_ZHARRGRON` is still there.
+`HELLFORGE_CAPS_ZHARRGRON` is still there. Its train and tank cap rituals pay CA's
+`wh3_dlc23_chd_hellforge_unit_cap_increase_warmachine_1` again (read 2026-11-23), so the
+repointing described below no longer holds.
 
 Eight stat upgrades (ammo, armour, reload, range, speed, physical resistance, explosion damage,
 barrier) plus six ability/attribute ones (Forgefire, Extra Reload, Black Powder Aplenty,
@@ -666,7 +672,9 @@ The one structural difference is that all 8 trains share `ui_unit_group_land = c
 and all 8 tanks share `chd_dreadquake`; CA's 11 units in that set collapse to exactly 6
 `ui_unit_group_land` values and exactly 6 cards draw, which fits — but the missile box's
 19 members / 9 groups / 13 cards does **not** fit the same rule, so treat it as unresolved.
-A private category sidesteps it entirely.
+A private category sidesteps it entirely. (Read 2026-10-25: under 9.0 the War Machines box draws
+only the hardcoded `WarmachineUnits` list in `dlc23helforge.cco`, which accounts for the missing
+cards; see the start of this section.)
 
 ---
 
